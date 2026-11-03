@@ -1,0 +1,360 @@
+<title>TDV 2200 USB Adapter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single drafting sheet — title block, schematic, then tables and bring-up steps in reading order */
+:root {
+  --bg: #f2f5f4;
+  --paper: #fbfcfc;
+  --ink: #1c292d;
+  --muted: #5a6a6e;
+  --rule: #cdd7d6;
+  --grid: #e3eae9;
+  --sig-in: #0b6c88;    /* keyboard -> host */
+  --sig-out: #a85b14;   /* host -> keyboard */
+  --pwr: #b8322a;
+  --code-bg: #e9efee;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111a1c; --paper: #162124; --ink: #e2eae9; --muted: #95a6a8; --rule: #2d3d40; --grid: #1d2a2d;
+    --sig-in: #55b6d2; --sig-out: #e59b57; --pwr: #ef6d5e; --code-bg: #1c2a2d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111a1c; --paper: #162124; --ink: #e2eae9; --muted: #95a6a8; --rule: #2d3d40; --grid: #1d2a2d;
+  --sig-in: #55b6d2; --sig-out: #e59b57; --pwr: #ef6d5e; --code-bg: #1c2a2d; color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.sheet { max-width: 1040px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+
+header { display: grid; gap: 6px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(34px, 6vw, 52px); line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.lede { max-width: 64ch; margin: 4px 0 0; color: var(--muted); }
+
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 26px; margin: 0 0 12px; letter-spacing: .02em; text-wrap: balance; }
+section > p { max-width: 68ch; margin: 0 0 12px; }
+
+.scroll { overflow-x: auto; }
+.drawing { background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; }
+.drawing svg { display: block; width: 100%; min-width: 860px; height: auto; }
+svg .box { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6; }
+svg .gridline { stroke: var(--grid); stroke-width: 1; }
+svg .title { font-family: var(--f-display); font-weight: 600; font-size: 20px; fill: var(--ink); }
+svg .sub { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+svg .pin { font-family: var(--f-mono); font-size: 12.5px; fill: var(--ink); }
+svg .pnum { font-family: var(--f-mono); font-size: 10.5px; fill: var(--muted); }
+svg .lbl { font-family: var(--f-mono); font-size: 11px; }
+svg .w { fill: none; stroke-width: 2; }
+svg .in { stroke: var(--sig-in); } svg .t-in { fill: var(--sig-in); }
+svg .out { stroke: var(--sig-out); } svg .t-out { fill: var(--sig-out); }
+svg .pw { stroke: var(--pwr); } svg .t-pw { fill: var(--pwr); }
+svg .gn { stroke: var(--ink); } svg .t-gn { fill: var(--ink); }
+svg .dot-in { fill: var(--sig-in); } svg .dot-gn { fill: var(--ink); } svg .dot-pw { fill: var(--pwr); }
+svg .cap { stroke: var(--ink); stroke-width: 2.4; fill: none; }
+svg .sw { stroke: var(--muted); stroke-width: 1; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { width: 22px; height: 3px; display: inline-block; border-radius: 2px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; font-family: var(--f-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--ink); padding: 8px 12px 6px 0; }
+td { border-bottom: 1px solid var(--rule); padding: 9px 12px 9px 0; vertical-align: top; }
+td.m, .m { font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 12px; white-space: nowrap; }
+.chip b { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--muted); display: inline-block; }
+.dir-in { color: var(--sig-in); font-weight: 600; } .dir-out { color: var(--sig-out); font-weight: 600; } .dir-pw { color: var(--pwr); font-weight: 600; }
+
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+.cols > * { min-width: 0; }
+
+ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 14px; max-width: 76ch; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 10px; }
+ol.steps li::before { content: counter(s); font-family: var(--f-display); font-weight: 600; font-size: 22px; line-height: 1.1; color: var(--muted); }
+ol.steps strong { font-weight: 600; }
+ol.steps p { margin: 2px 0 0; }
+
+.note { border-left: 3px solid var(--pwr); padding: 6px 0 6px 14px; max-width: 70ch; }
+
+code { font-family: var(--f-mono); font-size: .9em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+.codehead { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.codehead .m { color: var(--muted); }
+pre { margin: 0; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 16px; overflow-x: auto; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.5; }
+button { font-family: var(--f-mono); font-size: 12px; background: transparent; color: var(--ink); border: 1px solid var(--ink); border-radius: 3px; padding: 5px 12px; cursor: pointer; }
+button:hover { background: var(--ink); color: var(--paper); }
+button:focus-visible { outline: 2px solid var(--sig-in); outline-offset: 2px; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; }
+</style>
+
+<div class="sheet">
+  <header>
+    <div class="eyebrow">Tandberg TDV 2200 S · ND 320 keyboard · RP2040 build sheet</div>
+    <h1>TDV 2200 USB Adapter</h1>
+    <p class="lede">A Raspberry Pi Pico and one MAX3490 transceiver connect the keyboard's RS-422 link to USB. The keyboard sends at 2400 baud and takes commands at 600 baud, 8N1 in both directions.</p>
+  </header>
+
+  <section>
+    <h2>Schematic</h2>
+    <div class="scroll drawing">
+      <svg viewBox="0 0 960 470" role="img" aria-label="Schematic: Pico GP1 and GP4 to MAX3490 RO and DI; MAX3490 A, B, Y, Z to DE-9 pins 9, 4, 7, 2; Pico VBUS to DE-9 pin 3; GND to DE-9 pin 6">
+        <!-- Pico -->
+        <rect class="box" x="40" y="60" width="190" height="370"/>
+        <text class="title" x="56" y="90" style="font-size:18px">Raspberry Pi Pico</text>
+        <text class="sub" x="56" y="108">RP2040 · 3.3 V logic</text>
+        <text class="pin" x="222" y="139" text-anchor="end">GP1 · UART0 RX</text><text class="pnum" x="234" y="132">2</text>
+        <text class="pin" x="222" y="189" text-anchor="end">GP4 · UART1 TX</text><text class="pnum" x="234" y="182">6</text>
+        <text class="pin" x="222" y="259" text-anchor="end">3V3 OUT</text><text class="pnum" x="234" y="252">36</text>
+        <text class="pin" x="222" y="329" text-anchor="end">GND</text><text class="pnum" x="234" y="322">38</text>
+        <text class="pin" x="222" y="389" text-anchor="end">VBUS</text><text class="pnum" x="234" y="382">40</text>
+        <text class="sub" x="56" y="418">USB-C/micro-USB → PC</text>
+
+        <!-- MAX3490 -->
+        <rect class="box" x="410" y="80" width="160" height="230"/>
+        <text class="title" x="490" y="66" text-anchor="middle">MAX3490</text>
+        <text class="pin" x="420" y="139">RO</text><text class="pnum" x="398" y="132" text-anchor="end">2</text>
+        <text class="pin" x="420" y="189">DI</text><text class="pnum" x="398" y="182" text-anchor="end">3</text>
+        <text class="pin" x="420" y="249">VCC</text><text class="pnum" x="398" y="242" text-anchor="end">1</text>
+        <text class="pin" x="420" y="299">GND</text><text class="pnum" x="398" y="292" text-anchor="end">4</text>
+        <text class="pin" x="560" y="129" text-anchor="end">A</text><text class="pnum" x="582" y="122">8</text>
+        <text class="pin" x="560" y="169" text-anchor="end">B</text><text class="pnum" x="582" y="162">7</text>
+        <text class="pin" x="560" y="229" text-anchor="end">Y</text><text class="pnum" x="582" y="222">5</text>
+        <text class="pin" x="560" y="269" text-anchor="end">Z</text><text class="pnum" x="582" y="262">6</text>
+        <text class="sub" x="490" y="200" text-anchor="middle">receiver ◁</text>
+        <text class="sub" x="490" y="214" text-anchor="middle">driver ▷</text>
+
+        <!-- DE-9 -->
+        <rect class="box" x="770" y="80" width="150" height="330"/>
+        <text class="title" x="845" y="66" text-anchor="middle">DE-9 → keyboard</text>
+        <text class="pin" x="782" y="129">9 TRANS+</text><circle class="sw" cx="900" cy="125" r="6" style="fill:#7b4a2a"/>
+        <text class="pin" x="782" y="169">4 TRANS−</text><circle class="sw" cx="900" cy="165" r="6" style="fill:#e3c22b"/>
+        <text class="pin" x="782" y="229">7 REC+</text><circle class="sw" cx="900" cy="225" r="6" style="fill:#2f62c2"/>
+        <text class="pin" x="782" y="269">2 REC−</text><circle class="sw" cx="900" cy="265" r="6" style="fill:#ffffff"/>
+        <text class="pin" x="782" y="329">6 GND</text><circle class="sw" cx="900" cy="325" r="6" style="fill:#1b1b1b"/>
+        <text class="pin" x="782" y="389">3 +5 V</text><circle class="sw" cx="900" cy="385" r="6" style="fill:#d23a2e"/>
+
+        <!-- data: keyboard -> host -->
+        <polyline class="w in" points="770,125 570,125"/>
+        <polyline class="w in" points="770,165 570,165"/>
+        <polyline class="w in" points="410,135 230,135"/>
+        <text class="lbl t-in" x="670" y="117" text-anchor="middle">◀ 2400 baud</text>
+        <text class="lbl t-in" x="320" y="127" text-anchor="middle">◀ keystrokes</text>
+
+        <!-- data: host -> keyboard -->
+        <polyline class="w out" points="230,185 410,185"/>
+        <polyline class="w out" points="570,225 770,225"/>
+        <polyline class="w out" points="570,265 770,265"/>
+        <text class="lbl t-out" x="320" y="177" text-anchor="middle">commands ▶</text>
+        <text class="lbl t-out" x="670" y="217" text-anchor="middle">600 baud ▶</text>
+
+        <!-- 3.3 V supply to MAX3490 -->
+        <polyline class="w pw" points="230,255 330,255 330,245 410,245"/>
+        <!-- GND -->
+        <polyline class="w gn" points="230,325 770,325"/>
+        <polyline class="w gn" points="330,325 330,295 410,295"/>
+        <circle class="dot-gn" cx="330" cy="325" r="3.5"/>
+        <!-- decoupling cap between VCC and GND at x=370 -->
+        <polyline class="w pw" points="370,245 370,264"/>
+        <line class="cap" x1="358" y1="266" x2="382" y2="266"/>
+        <line class="cap" x1="358" y1="274" x2="382" y2="274"/>
+        <polyline class="w gn" points="370,276 370,295"/>
+        <circle class="dot-pw" cx="370" cy="245" r="3.5"/>
+        <circle class="dot-gn" cx="370" cy="295" r="3.5"/>
+        <text class="sub" x="388" y="276">100 nF</text>
+        <!-- 5 V to keyboard -->
+        <polyline class="w pw" points="230,385 770,385"/>
+        <text class="lbl t-pw" x="500" y="377" text-anchor="middle">+5 V from USB → keyboard</text>
+        <text class="lbl t-gn" x="600" y="317" text-anchor="middle">common ground (also DE-9 shell)</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--sig-in)"></i>keyboard → host</span>
+      <span><i style="background:var(--sig-out)"></i>host → keyboard</span>
+      <span><i style="background:var(--pwr)"></i>power</span>
+      <span><i style="background:var(--ink)"></i>ground</span>
+      <span>Dots on the DE-9 show the keyboard cable's wire colours.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Connections</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>From</th><th>To</th><th>Signal</th><th>Keyboard wire</th></tr></thead>
+        <tbody>
+          <tr><td class="m">DE-9 pin 9</td><td class="m">MAX3490 A (8)</td><td><span class="dir-in">◀</span> Keyboard TRANS+ (26LS31 Y)</td><td><span class="chip"><b style="background:#7b4a2a"></b>brown</span></td></tr>
+          <tr><td class="m">DE-9 pin 4</td><td class="m">MAX3490 B (7)</td><td><span class="dir-in">◀</span> Keyboard TRANS− (26LS31 Z)</td><td><span class="chip"><b style="background:#e3c22b"></b>yellow</span></td></tr>
+          <tr><td class="m">MAX3490 RO (2)</td><td class="m">Pico GP1 (pin 2)</td><td><span class="dir-in">◀</span> UART0 RX, 2400 baud</td><td></td></tr>
+          <tr><td class="m">Pico GP4 (pin 6)</td><td class="m">MAX3490 DI (3)</td><td><span class="dir-out">▶</span> UART1 TX, 600 baud</td><td></td></tr>
+          <tr><td class="m">MAX3490 Y (5)</td><td class="m">DE-9 pin 7</td><td><span class="dir-out">▶</span> Keyboard REC+ (26LS32 A)</td><td><span class="chip"><b style="background:#2f62c2"></b>blue</span></td></tr>
+          <tr><td class="m">MAX3490 Z (6)</td><td class="m">DE-9 pin 2</td><td><span class="dir-out">▶</span> Keyboard REC− (26LS32 B)</td><td><span class="chip"><b style="background:#ffffff"></b>white</span></td></tr>
+          <tr><td class="m">Pico 3V3 OUT (36)</td><td class="m">MAX3490 VCC (1)</td><td><span class="dir-pw">+</span> 3.3 V, 100 nF to GND at the chip</td><td></td></tr>
+          <tr><td class="m">Pico VBUS (40)</td><td class="m">DE-9 pin 3</td><td><span class="dir-pw">+</span> 5 V to the keyboard</td><td><span class="chip"><b style="background:#d23a2e"></b>red</span></td></tr>
+          <tr><td class="m">Pico GND (38)</td><td class="m">MAX3490 GND (4), DE-9 pin 6, shell</td><td>Ground</td><td><span class="chip"><b style="background:#1b1b1b"></b>black</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section>
+      <h2>Parts</h2>
+      <table>
+        <thead><tr><th>Qty</th><th>Part</th></tr></thead>
+        <tbody>
+          <tr><td class="m">1</td><td>Raspberry Pi Pico, or another RP2040 board that breaks out GP1 and GP4</td></tr>
+          <tr><td class="m">1</td><td>MAX3490 in DIP-8 (e.g. MAX3490ECPA+): 3.3 V full-duplex RS-422 transceiver. A MAX3491 or SP3491 also works; tie its RE̅ to GND and DE to 3.3 V.</td></tr>
+          <tr><td class="m">1</td><td>100 nF ceramic capacitor, as close to MAX3490 pins 1 and 4 as you can get it</td></tr>
+          <tr><td class="m">1</td><td>DE-9 solder-cup connector of the opposite gender to the keyboard's plug, with hood</td></tr>
+          <tr><td class="m">1</td><td>Stripboard or perfboard, an 8-pin DIP socket, hookup wire</td></tr>
+          <tr><td class="m">opt.</td><td>500 mA polyfuse in series with VBUS</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px;color:var(--muted);font-size:13.5px">No termination resistor is needed at 2400 baud over a short cable. Check the MAX3490 pin numbers against its datasheet before soldering.</p>
+    </section>
+
+    <section>
+      <h2>Why this works</h2>
+      <p>The keyboard's AM26LS32 receiver switches at ±200 mV, so the MAX3490's driver at 3.3 V supply (about 2 V differential) is well within spec.</p>
+      <p>The MAX3490's receiver accepts common-mode voltages from −7 V to +12 V, so the AM26LS31's 5 V output is no problem.</p>
+      <p>The RP2040 UARTs use the same baud rate for TX and RX, so receiving and sending go through separate UARTs: UART0 receives at 2400, UART1 sends at 600.</p>
+    </section>
+  </div>
+
+  <section>
+    <h2>Bring-up</h2>
+    <ol class="steps">
+      <li><div><strong>Confirm power pins on the keyboard.</strong><p>Keyboard unpowered: DE-9 pin 3 should beep to AM26LS31 pin 16, and pin 6 to pin 8.</p></div></li>
+      <li><div><strong>Install CircuitPython.</strong><p>Download the UF2 for your board from circuitpython.org. Hold BOOTSEL while plugging in the Pico, then drop the UF2 onto the <code>RPI-RP2</code> drive. It restarts as <code>CIRCUITPY</code>.</p></div></li>
+      <li><div><strong>Copy the sniffer.</strong><p>Save <code>code.py</code> (below) to the <code>CIRCUITPY</code> drive. It runs straight away.</p></div></li>
+      <li><div><strong>Check voltages before connecting the keyboard.</strong><p>About 5 V between DE-9 pins 3 and 6, and 3.3 V across MAX3490 pins 1 and 4.</p></div></li>
+      <li><div><strong>Connect the keyboard and watch the current.</strong><p>A USB power meter is ideal. If the draw is far above what a keyboard should need, or near 500 mA, unplug and investigate.</p></div></li>
+      <li><div><strong>Open the serial console and press keys.</strong><p>Thonny, Mu, <code>tio /dev/ttyACM0</code> or PuTTY all work. Each key should produce a line of hex bytes.</p></div></li>
+      <li><div><strong>If the output is garbage,</strong><p>swap the wires on DE-9 pins 9 and 4. If there is no output at all, the keyboard may be waiting for an enable command from the host. Try sending a few bytes from the console, or sniff the real terminal at power-on.</p></div></li>
+      <li><div><strong>Record a code for every key</strong><p>and note whether releases send anything. That table drives the next phase: the USB keyboard firmware.</p></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="codehead">
+      <h2 style="margin:0">Sniffer firmware</h2>
+      <button id="copy-code" type="button">Copy code.py</button>
+    </div>
+    <pre id="code"><code></code></pre>
+  </section>
+
+  <footer>Pinout from your own trace, matching a 2013 J2–DE9 cable table for the same keyboard. Protocol: UART 8N1, 2400 baud from the keyboard and 600 baud to it.</footer>
+</div>
+
+<script id="src" type="text/plain"># TDV 2200 S (ND 320) keyboard sniffer - CircuitPython, RP2040
+#
+# Phase 1: find out what the keyboard sends. No USB keyboard yet.
+#
+# Wiring (see the build sheet):
+#   GP1 (UART0 RX) <- MAX3490 RO   keyboard -> host, 2400 baud
+#   GP4 (UART1 TX) -> MAX3490 DI   host -> keyboard, 600 baud
+#
+# Open the board's serial console (Thonny, Mu, `tio /dev/ttyACM0`,
+# `screen /dev/ttyACM0 115200`, or PuTTY on COMx) and press keys.
+# Every received chunk is printed as:
+#   +gap_ms  hex bytes  |printable|
+# A gap of more than BURST_MS starts a new line, so one keypress
+# (and its release, if the keyboard sends one) is easy to tell apart.
+#
+# To experiment with commands to the keyboard (LEDs, beeper, ...),
+# type hex bytes in the console and press Enter, e.g.:  1b 41
+# They are sent to the keyboard at 600 baud.
+
+import sys
+import time
+
+import board
+import busio
+import supervisor
+
+KBD_BAUD_IN = 2400   # keyboard -> host
+KBD_BAUD_OUT = 600   # host -> keyboard
+BURST_MS = 30        # gap that separates one burst from the next
+
+kbd_in = busio.UART(
+    tx=None, rx=board.GP1, baudrate=KBD_BAUD_IN,
+    bits=8, parity=None, stop=1, timeout=0, receiver_buffer_size=512,
+)
+kbd_out = busio.UART(
+    tx=board.GP4, rx=None, baudrate=KBD_BAUD_OUT,
+    bits=8, parity=None, stop=1,
+)
+
+
+def fmt(data):
+    hexs = " ".join("{:02x}".format(b) for b in data)
+    text = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
+    return hexs, text
+
+
+def send_hex(line):
+    try:
+        data = bytes(int(tok, 16) for tok in line.replace(",", " ").split())
+    except ValueError:
+        print("!! could not parse:", repr(line), "- use hex bytes like: 1b 41")
+        return
+    if data:
+        kbd_out.write(data)
+        print(">> sent", fmt(data)[0])
+
+
+print()
+print("TDV 2200 sniffer: listening at", KBD_BAUD_IN, "baud on GP1,",
+      "sending at", KBD_BAUD_OUT, "baud on GP4")
+print("Press keys on the TDV keyboard. Type hex + Enter to send bytes.")
+
+last_ns = time.monotonic_ns()
+cmd = ""
+
+while True:
+    # Keyboard -> host
+    n = kbd_in.in_waiting
+    if n:
+        data = kbd_in.read(n)
+        if data:
+            now = time.monotonic_ns()
+            gap_ms = (now - last_ns) // 1_000_000
+            last_ns = now
+            hexs, text = fmt(data)
+            if gap_ms > BURST_MS:
+                print()
+            print("+{:6d} ms  {:<24}  |{}|".format(gap_ms, hexs, text))
+
+    # Console -> keyboard
+    while supervisor.runtime.serial_bytes_available:
+        ch = sys.stdin.read(1)
+        if ch in "\r\n":
+            if cmd.strip():
+                send_hex(cmd)
+            cmd = ""
+        else:
+            cmd += ch
+</script>
+<script>
+(function () {
+  var src = document.getElementById('src').textContent.replace(/^\n/, '');
+  document.querySelector('#code code').textContent = src;
+  var btn = document.getElementById('copy-code');
+  btn.addEventListener('click', function () {
+    function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy code.py'; }, 1600); }
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents(document.querySelector('#code code'));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = 'Selected, press Ctrl+C';
+    }
+    try { navigator.clipboard.writeText(src).then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+</script>
