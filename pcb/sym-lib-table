@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "tdv2200")(type "KiCad")(uri "${KIPRJMOD}/tdv2200.kicad_sym")(options "")(descr "TDV 2200 adapter symbols"))
+)

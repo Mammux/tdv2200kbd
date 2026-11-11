@@ -20,6 +20,7 @@ an RS-422 serial link. This project has two parts:
 |---|---|
 | Keyboard pinout | Traced on the real keyboard, matches a 2013 cable table |
 | Adapter schematic | Designed, not built yet |
+| Adapter PCB (KiCad) | Schematic done, parts placed, not routed |
 | Sniffer firmware (CircuitPython) | Written, not run on hardware yet |
 | Patched original ROM (raw mode on command) | Passes all emulator tests, not tried on hardware |
 | Raw-only ROM | Passes all emulator tests, not tried on hardware |
@@ -34,6 +35,8 @@ an RS-422 serial link. This project has two parts:
 | [`docs/schematic-391170.pdf`](docs/schematic-391170.pdf) | Tandberg keyboard schematic, part no. 391170 (scan by Torfinn Ingolfsen) |
 | [`adapter/build-sheet.html`](adapter/build-sheet.html) | Adapter schematic, wiring, parts list and bring-up steps (open in a browser) |
 | [`adapter/code.py`](adapter/code.py) | CircuitPython sniffer: prints what the keyboard sends, sends hex bytes to it |
+| [`adapter/loopback_test.py`](adapter/loopback_test.py) | Tests the Pico–MAX3490–DE-9 wiring without the keyboard |
+| [`pcb/`](pcb/) | KiCad project for the adapter board ([README](pcb/README.md)) |
 | [`firmware/`](firmware/) | Keyboard ROM images, sources, 8035 emulator and tests ([README](firmware/README.md)) |
 
 ## Quick start
