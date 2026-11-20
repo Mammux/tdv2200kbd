@@ -33,6 +33,7 @@ works in a real terminal.
 | `tdv2200-raw.asm`, `tdv2200-raw.bin` | Raw-only firmware source and image |
 | `build_raw.py`, `test_raw.py` | Build and emulator tests for the raw-only firmware |
 | `*_x4_AT28C64.bin`, `*_x16_AT28C256.bin` | Images repeated to fill an 8 KB / 32 KB EEPROM (`make_large_images.py`) |
+| `c/tdv2200-raw.c`, `c/tdv2200-raw-c.bin` | C version of the raw-only firmware and its image (SDCC mcs48 port, see `c/README.md`) |
 | `build_all.sh` | Rebuilds everything and runs all tests |
 | `timing_check.py` | Measures tick timing (main-loop overruns, interrupt length, TX bit timing) for the original and both new images |
 
