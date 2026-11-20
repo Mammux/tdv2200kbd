@@ -3,6 +3,18 @@
 Using the keyboard from a Tandberg **TDV 2200 S** terminal (sold by Norsk Data
 as the **ND 320**, item no. 4580) as a USB keyboard on a modern computer.
 
+<p align="center">
+  <a href="https://deskthority.net/wiki/File:ND246-Notis-TDV2200-9S-1984.jpg">
+    <img src="https://deskthority.net/wiki/images/f/f6/ND246-Notis-TDV2200-9S-1984.jpg"
+         alt="Tandberg TDV 2200/9S terminal branded ND 246, with its NOTIS keyboard (1984)" width="640">
+  </a>
+  <br>
+  <sub>A TDV 2200/9S terminal sold as the ND 246 (1984), with the same family of
+  NOTIS keyboard. Photo: Torfinn Ingolfsen,
+  <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>,
+  via <a href="https://deskthority.net/wiki/File:ND246-Notis-TDV2200-9S-1984.jpg">Deskthority</a>.</sub>
+</p>
+
 The keyboard has its own 8035 microcontroller and talks to the terminal over
 an RS-422 serial link. This project has two parts:
 
@@ -65,4 +77,8 @@ the patched disassembly, and runs the emulator tests.
 * `firmware/965313-0.asm` (the disassembly of the original ROM) and the ROM dump
   are by Frode; the dump is also in the Supermagnum/Tandberg repository on GitHub.
 * `docs/schematic-391170.pdf` was scanned by Torfinn Ingolfsen (2013).
+* The photo at the top is by Torfinn Ingolfsen, licensed
+  [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), and is shown
+  from [Deskthority](https://deskthority.net/wiki/File:ND246-Notis-TDV2200-9S-1984.jpg)
+  (it isn't stored in this repository).
 * Protocol details from the Deskthority TDV 2200 S thread and NDWiki.
