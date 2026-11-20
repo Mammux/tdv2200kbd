@@ -1,9 +1,14 @@
-"""Emulator tests for the raw-only firmware (tdv2200-raw.bin)."""
+"""Emulator tests for the raw-only firmware (tdv2200-raw.bin).
+
+Usage: python3 test_raw.py [image]   (default tdv2200-raw.bin; the C version
+is tested with c/tdv2200-raw-c.bin)
+"""
 import random
+import sys
 from harness import Keyboard
 
 ORIG = open("965313-0.bin", "rb").read()
-RAW = open("tdv2200-raw.bin", "rb").read()
+RAW = open(sys.argv[1] if len(sys.argv) > 1 else "tdv2200-raw.bin", "rb").read()
 PATCH = open("965313-0-rawmode.bin", "rb").read()
 REAL_KEYS = [k for k in range(3, 128) if ORIG[0x600 + k] != 0]
 fails = 0
