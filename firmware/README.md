@@ -34,6 +34,7 @@ works in a real terminal.
 | `build_raw.py`, `test_raw.py` | Build and emulator tests for the raw-only firmware |
 | `*_x4_AT28C64.bin`, `*_x16_AT28C256.bin` | Images repeated to fill an 8 KB / 32 KB EEPROM (`make_large_images.py`) |
 | `build_all.sh` | Rebuilds everything and runs all tests |
+| `timing_check.py` | Measures tick timing (main-loop overruns, interrupt length, TX bit timing) for the original and both new images |
 
 Rebuild everything and run all tests: `./build_all.sh` (Python 3, no extra packages).
 
