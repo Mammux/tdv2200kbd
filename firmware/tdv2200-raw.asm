@@ -130,6 +130,9 @@ Main:
 	anl	a,#0E0H
 	orl	a,r2
 	outl	p1,a			; select column r2
+	nop				; let the row lines settle: 3 cycles,
+	nop				; the same delay as the original ROM
+	nop				; (mov a,r4 / jb7) before it reads them
 	ins	a,bus			; rows of this column
 	xch	a,@r1			; last read := now, a = previous read
 	xrl	a,@r1
