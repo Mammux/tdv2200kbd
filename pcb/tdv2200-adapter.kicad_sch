@@ -1671,7 +1671,7 @@
       (at 144.78 139.7 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "500mA"
+    (property "Value" "Wire link"
       (at 149.86 139.7 90)
       (effects (font (size 1.27 1.27)))
     )
@@ -1687,13 +1687,7 @@
         (font (size 1.27 1.27)) hide
       )
     )
-    (property "MPN" "Littelfuse 60R050XPR"
-      (at 147.32 139.7 0)
-      (effects
-        (font (size 1.27 1.27)) hide
-      )
-    )
-    (property "Note" "Optional; bridge with a wire if not fitted"
+    (property "Note" "Fit a wire link. A 500 mA PTC (60R050XPR) dropped the keyboard supply to 4.25 V and held it in reset. If a fuse is wanted, use 1.1 A hold or more."
       (at 147.32 139.7 0)
       (effects
         (font (size 1.27 1.27)) hide
@@ -2703,7 +2697,7 @@
     )
     (uuid "581447a0-8a71-5c86-8a23-c04c72da1a6f")
   )
-  (text "C1: as close as possible to U2 pins 1 and 4.\nF1 is optional: bridge it if not fitted.\nNo termination resistor needed at 2400 baud."
+  (text "C1: as close as possible to U2 pins 1 and 4.\nF1: fit a wire link. A 500 mA polyfuse drops too much voltage\n(keyboard needs >= 4.75 V; it is held in reset below ~4.65 V).\nNo termination resistor needed at 2400 baud."
     (at 120.65 152.4 0)
     (effects
       (font (size 1.27 1.27))

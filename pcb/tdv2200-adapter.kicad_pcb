@@ -450,7 +450,7 @@
         (effects (font (size 1 1) (thickness 0.15)))
       (tstamp 2b2d2dcb-827a-49b4-87d0-b169f9f92d65)
     )
-    (fp_text value "500mA" (at 2.55 2.6) (layer "F.Fab")
+    (fp_text value "Wire link" (at 2.55 2.6) (layer "F.Fab")
         (effects (font (size 1 1) (thickness 0.15)))
       (tstamp a790c5de-1ed9-4abf-b34f-c7f33dc60950)
     )

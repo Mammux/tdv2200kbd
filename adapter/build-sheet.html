@@ -214,7 +214,7 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
           <tr><td class="m">1</td><td>100 nF ceramic capacitor, as close to MAX3490 pins 1 and 4 as you can get it</td></tr>
           <tr><td class="m">1</td><td>DE-9 solder-cup connector of the opposite gender to the keyboard's plug, with hood</td></tr>
           <tr><td class="m">1</td><td>Stripboard or perfboard, an 8-pin DIP socket, hookup wire</td></tr>
-          <tr><td class="m">opt.</td><td>500 mA polyfuse in series with VBUS</td></tr>
+          <tr><td class="m">&ndash;</td><td>No fuse in the 5 V line: a 500 mA polyfuse dropped the keyboard to 4.25 V, which holds it in reset. Wire VBUS straight to DE-9 pin 3. If you want a fuse, use 1.1 A hold or more.</td></tr>
         </tbody>
       </table>
       <p style="margin-top:12px;color:var(--muted);font-size:13.5px">No termination resistor is needed at 2400 baud over a short cable. Check the MAX3490 pin numbers against its datasheet before soldering.</p>
@@ -235,7 +235,7 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
       <li><div><strong>Install CircuitPython.</strong><p>Download the UF2 for your board from circuitpython.org. Hold BOOTSEL while plugging in the Pico, then drop the UF2 onto the <code>RPI-RP2</code> drive. It restarts as <code>CIRCUITPY</code>.</p></div></li>
       <li><div><strong>Copy the sniffer.</strong><p>Save <code>code.py</code> (below) to the <code>CIRCUITPY</code> drive. It runs straight away.</p></div></li>
       <li><div><strong>Check voltages before connecting the keyboard.</strong><p>About 5 V between DE-9 pins 3 and 6, and 3.3 V across MAX3490 pins 1 and 4.</p></div></li>
-      <li><div><strong>Connect the keyboard and watch the current.</strong><p>A USB power meter is ideal. If the draw is far above what a keyboard should need, or near 500 mA, unplug and investigate.</p></div></li>
+      <li><div><strong>Connect the keyboard and check its supply.</strong><p>Measure AM26LS31 pin 16 to pin 8 in the keyboard: it needs at least 4.75 V (4.93 V measured on the prototype). Below about 4.65 V its reset chip holds the CPU and the keyboard beeps continuously. A USB power meter shows the current; the keyboard draws a few hundred mA.</p></div></li>
       <li><div><strong>Open the serial console and press keys.</strong><p>Thonny, Mu, <code>tio /dev/ttyACM0</code> or PuTTY all work. Each key should produce a line of hex bytes.</p></div></li>
       <li><div><strong>If the output is garbage,</strong><p>swap the wires on DE-9 pins 9 and 4. If there is no output at all, the keyboard may be waiting for an enable command from the host. Try sending a few bytes from the console, or sniff the real terminal at power-on.</p></div></li>
       <li><div><strong>Record a code for every key</strong><p>and note whether releases send anything. That table drives the next phase: the USB keyboard firmware.</p></div></li>

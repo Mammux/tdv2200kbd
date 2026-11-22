@@ -57,6 +57,11 @@ Keyboard → host:
 | `00 xx` | Special column changed; `xx` = bit0 ST1, bit1 CAPS, bit2 CTRL, bit3 LOCK, bit4 SHIFT, bit5 AL1, bit6 AL2, bit7 SLUTT |
 
 Position 0 has no key, so `00` always starts a special-column report.
+AL1 and AL2 (bits 5 and 6) are configuration lines, not keys: on the
+prototype's keyboard both are always set, so it reports `00 60` at rest.
+A host should take modifiers from bits 1–4 and 7 only.
+After power-up, or after plugging the cable in, treat incoming bytes as noise
+until the first `00 xx` report, and ignore releases of keys that aren't down.
 Keys are debounced (two equal reads about 7 ms apart). There is no
 auto-repeat in raw mode; the host does that.
 

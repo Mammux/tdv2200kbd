@@ -31,11 +31,11 @@ an RS-422 serial link. This project has two parts:
 | Part | State |
 |---|---|
 | Keyboard pinout | Traced on the real keyboard, matches a 2013 cable table |
-| Adapter schematic | Designed, not built yet |
+| Adapter (breadboard) | Built and working with the keyboard. The 500 mA polyfuse is left out: it dropped the keyboard's supply too far (see `docs/hardware.md`) |
 | Adapter PCB (KiCad) | Schematic done, parts placed, not routed |
-| Sniffer firmware (CircuitPython) | Written, not run on hardware yet |
+| Sniffer firmware (CircuitPython) | Works on the Pico with the keyboard |
 | Patched original ROM (raw mode on command) | Passes all emulator tests, not tried on hardware |
-| Raw-only ROM | Passes all emulator tests, not tried on hardware |
+| Raw-only ROM | Works on the real keyboard (in an AT28C16): correct press/release codes, `20` resets and reports `00 60` |
 | USB HID firmware for the adapter | Not started |
 
 ## Layout

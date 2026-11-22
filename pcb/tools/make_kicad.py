@@ -240,9 +240,10 @@ def build():
     sh.place("Device:C", "C1", "100nF", 175.26, 66.04,
              "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm",
              fields={"MPN": "Vishay K104K15X7RF5TL2", "Note": "Place next to U2 pins 1 and 4"})
-    sh.place("Device:Polyfuse", "F1", "500mA", 147.32, 139.7,
+    sh.place("Device:Polyfuse", "F1", "Wire link", 147.32, 139.7,
              "tdv2200:Fuse_Littelfuse_60R_P5.10mm",
-             fields={"MPN": "Littelfuse 60R050XPR", "Note": "Optional; bridge with a wire if not fitted"})
+             fields={"Note": "Fit a wire link. A 500 mA PTC (60R050XPR) dropped the keyboard supply "
+                             "to 4.25 V and held it in reset. If a fuse is wanted, use 1.1 A hold or more."})
     sh.place("Connector:DE9_Receptacle_MountingHoles", "J1", "Keyboard", 228.6, 96.52,
              "Connector_Dsub:DSUB-9_Female_Horizontal_P2.77x2.84mm_EdgePinOffset9.90mm_Housed_MountingHolesOffset11.32mm",
              fields={"Note": "Female DE-9: mates with the keyboard's plug. Match footprint to the part bought."})
@@ -298,7 +299,8 @@ def build():
             "  1, 5, 8 not fitted in the keyboard plug",
             200.66, 124.46)
     sh.text("C1: as close as possible to U2 pins 1 and 4.\n"
-            "F1 is optional: bridge it if not fitted.\n"
+            "F1: fit a wire link. A 500 mA polyfuse drops too much voltage\n"
+            "(keyboard needs >= 4.75 V; it is held in reset below ~4.65 V).\n"
             "No termination resistor needed at 2400 baud.", 120.65, 152.4)
     return sh, pico, max3490
 

@@ -1,7 +1,7 @@
 # Adapter PCB (KiCad)
 
 KiCad project for the adapter board: Raspberry Pi Pico, MAX3490, decoupling
-capacitor, optional polyfuse and the DE-9 for the keyboard.
+capacitor, a wire link where a fuse could go (F1), and the DE-9 for the keyboard.
 
 Open `tdv2200-adapter.kicad_pro` in KiCad 7 or newer. KiCad 8/9 will offer to
 upgrade the files; that's fine.
@@ -21,7 +21,7 @@ upgrade the files; that's fine.
 | U1 | Raspberry Pi Pico | `tdv2200:RaspberryPi_Pico_TH` (2 × 20 holes, 17.78 mm apart: solder the Pico on, or use 1×20 header sockets) |
 | U2 | MAX3490 (DIP-8) | `Package_DIP:DIP-8_W7.62mm` |
 | C1 | 100 nF ceramic, 5 mm pitch (Vishay K104K15X7RF5TL2) | `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm` |
-| F1 | Littelfuse 60R050XPR (optional) | `tdv2200:Fuse_Littelfuse_60R_P5.10mm` |
+| F1 | **Wire link** (see below) | `tdv2200:Fuse_Littelfuse_60R_P5.10mm` (5.1 mm pitch; a wire link fits) |
 | J1 | DE-9 female, right-angle | `Connector_Dsub:DSUB-9_Female_Horizontal_P2.77x2.84mm_EdgePinOffset9.90mm_Housed_MountingHolesOffset11.32mm` |
 | H1-H4 | M3 mounting holes | `MountingHole:MountingHole_3.2mm_M3` |
 
@@ -32,8 +32,12 @@ Before ordering, check:
   how far the pins sit from the board edge, so pick the footprint that
   matches the connector you buy. With the one chosen here, the connector's
   flange lines up with the board's right edge.
-* **F1 lead spacing** against the polyfuse's datasheet (5.1 mm assumed). If
-  you leave F1 out, bridge its two holes with a wire.
+* **F1 is a wire link.** On the real keyboard a 500 mA polyfuse (60R050XPR)
+  dropped the keyboard's supply to 4.25 V, below the 4.65 V at which its
+  reset chip holds the CPU, so it only beeped. With a wire link it gets
+  4.93 V. If you want a fuse anyway, use one with a hold current of 1.1 A or
+  more (lower resistance), and check that the keyboard still gets at least
+  4.75 V. Check its lead spacing against the footprint (5.1 mm).
 
 ## Nets
 

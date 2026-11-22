@@ -24,12 +24,40 @@ damage the line chips.
 
 Serial format: 8N1, **2400 baud** keyboard → host, **600 baud** host → keyboard.
 
+## Power
+
+The keyboard needs at least **4.75 V** (its TTL chips are specified for
+4.75–5.25 V). U13, a small Maxim reset supervisor (most likely a MAX690),
+holds the CPU in reset below about 4.65 V. While the CPU is in reset all its
+port pins float high, including P1.6 and P1.7, which turns the key click on:
+**a continuous beep means the keyboard is held in reset**, usually because
+the supply is too low.
+
+Measured on the prototype adapter, powered from a Mac's USB port, at
+AM26LS31 pin 16 to pin 8:
+
+| Setup | Voltage |
+|---|---|
+| Through a 500 mA polyfuse (60R050XPR) | 4.25 V: held in reset, continuous beep |
+| Wire link instead of the fuse, idle | 4.93 V |
+| Wire link, Caps LED on | 4.91 V |
+| Wire link, during a beep | 4.92 V (meter too slow to show brief dips) |
+
+The size of the drop across the fuse suggests the keyboard draws close to
+500 mA. If the voltage is marginal on another computer or cable, power the
+keyboard from its own 5 V supply (DE-9 pin 3, GND shared with the adapter,
+VBUS not connected to pin 3), at most 5.25 V.
+
+Plugging the DE-9 in while powered gives a few junk bytes on the TX line
+(contacts bounce, the keyboard may reset more than once). The host should
+ignore everything until it has seen a `00 xx` report.
+
 ## Main chips
 
 | Ref | Part | Function |
 |---|---|---|
 | U1 | MAB 8035HL | MCS-48 CPU, no internal ROM, 64 bytes RAM, 5.76 MHz crystal |
-| U8 | M2716 (socketed) | 2 KB EPROM with the firmware, label 965313 |
+| U8 | M2716 (socketed) | 2 KB EPROM with the firmware, label 965313 (the prototype's chip is revision -1; see below) |
 | U5, U7 | 74LS373 | U7: address latch for the EPROM. U5: LED latch (BUS output) |
 | U4 | 74LS154 | 4-to-16 decoder, selects one of 16 matrix columns (P1.0-P1.3) |
 | U2 | 74HC240 | Reads the 8 matrix rows onto the BUS |
@@ -69,6 +97,11 @@ legend.
 The special column has one row each for ST1 (bit 0), CAPS (1), CTRL (2),
 LOCK (3), SHIFT (4), AL1 (5), AL2 (6) and SLUTT/BREAK (7).
 
+AL1 and AL2 are not keys. The original firmware reads them once at start-up
+as a configuration setting, so they are most likely jumpers or switches
+selecting a variant. On the prototype's keyboard both are always set, so the
+idle special column reads `60`.
+
 ## Replacing the EPROM
 
 The 2716 needs 25 V to program, which most cheap programmers can't supply.
@@ -93,6 +126,17 @@ EEPROMs are easier, and can be reprogrammed electrically:
   `_x16_AT28C256.bin` image, where the 2 KB firmware is repeated to fill the
   chip, so the keyboard runs the same code however the extra address lines
   end up.
+
+### The prototype's original EPROM
+
+The 2716 in the prototype's keyboard is **965313-1**, a later revision than the
+965313-0 dump in `firmware/`. Five reads with a T48 programmer (minipro, profile
+`M2716@DIP24`) all differed, always by 1-bits read as 0, mostly on D5–D7, so
+no exact copy exists yet. Bits that read as 1 can't be read errors, and they
+show that -1 changes only key tables, the checksum adjustment byte and the
+version string ("301"): Ctrl+F1 and Ctrl+SLUTT send `FF` codes, and
+Shift+arrows send different codes from the plain arrows. The program code
+is unchanged, so the patch's hook addresses fit -1 too.
 
 Buy these chips from an authorised distributor: old Atmel EEPROMs are often
 counterfeit on marketplaces. Keep the original EPROM.
