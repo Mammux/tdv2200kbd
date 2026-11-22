@@ -77,4 +77,5 @@ the CircuitPython modules. It needs only Python 3:
 python3 adapter/tests/test_usb.py
 ```
 
-None of this has run on a real Pico yet.
+Tested on the prototype: the TDV 2200 keyboard (raw-only ROM in an AT28C16)
+works as a USB keyboard on a Mac through the Pico.
