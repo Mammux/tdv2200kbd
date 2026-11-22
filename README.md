@@ -36,7 +36,7 @@ an RS-422 serial link. This project has two parts:
 | Sniffer firmware (CircuitPython) | Works on the Pico with the keyboard |
 | Patched original ROM (raw mode on command) | Passes all emulator tests, not tried on hardware |
 | Raw-only ROM | Works on the real keyboard (in an AT28C16): correct press/release codes, `20` resets and reports `00 60` |
-| USB HID firmware for the adapter | Not started |
+| USB keyboard firmware (CircuitPython) | Written, passes emulator tests, not run on the Pico yet |
 
 ## Layout
 
@@ -48,6 +48,7 @@ an RS-422 serial link. This project has two parts:
 | [`adapter/build-sheet.html`](adapter/build-sheet.html) | Adapter schematic, wiring, parts list and bring-up steps (open in a browser) |
 | [`adapter/code.py`](adapter/code.py) | CircuitPython sniffer: prints what the keyboard sends, sends hex bytes to it |
 | [`adapter/loopback_test.py`](adapter/loopback_test.py) | Tests the Pico–MAX3490–DE-9 wiring without the keyboard |
+| [`adapter/usb/`](adapter/usb/) | USB keyboard firmware for the Pico (CircuitPython) ([README](adapter/usb/README.md)) |
 | [`pcb/`](pcb/) | KiCad project for the adapter board ([README](pcb/README.md)) |
 | [`firmware/`](firmware/) | Keyboard ROM images, sources, 8035 emulator and tests ([README](firmware/README.md)) |
 
@@ -57,10 +58,12 @@ an RS-422 serial link. This project has two parts:
 2. Program `firmware/965313-0-rawmode.bin` into an AT28C16 (or see
    `docs/hardware.md` for AT28C64/AT28C256), put it in socket U8 in place of the
    original 2716, and keep the original.
-3. Install CircuitPython on the Pico, copy `adapter/code.py` to it and open
-   the serial console. Type `31` and Enter to turn on raw mode, then press keys:
-   each press shows `k`, each release `k + 80`. `firmware/keymap.csv` lists `k`
-   for every key.
+3. To check it, install CircuitPython on the Pico, copy `adapter/code.py` (the
+   sniffer) to it and open the serial console. Each key press shows `k`, each
+   release `k + 80` (`firmware/keymap.csv` lists `k` for every key). With the
+   patched ROM, type `31` and Enter first to turn on raw mode.
+4. To use it as a keyboard, install the USB firmware from `adapter/usb/`
+   (see its README) and set the computer's layout to Norwegian.
 
 ## Rebuilding the firmware
 

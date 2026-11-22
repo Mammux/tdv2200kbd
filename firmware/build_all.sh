@@ -10,3 +10,4 @@ python3 test_orig.py
 python3 test_patch.py
 python3 test_raw.py
 python3 test_raw.py c/tdv2200-raw-c.bin
+python3 ../adapter/tests/test_usb.py

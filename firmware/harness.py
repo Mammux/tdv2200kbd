@@ -45,26 +45,34 @@ class Keyboard:
         for b in bits:
             self.rx_bits += [b] * 4
 
-    def received(self):
-        """Decode keyboard -> host bytes from TX samples (1 sample per bit)."""
+    def _decode(self):
+        """Decode keyboard -> host bytes from TX samples (1 sample per bit).
+
+        Returns (bytes, used): used is how many samples were consumed. A byte
+        whose start bit has arrived but whose stop bit hasn't yet is left for
+        the next call.
+        """
         s = self.tx_samples
         out, i = [], 0
         while i < len(s):
-            if s[i] == 0 and i + 9 < len(s):
+            if s[i] == 0:
+                if i + 9 >= len(s):
+                    break                      # byte still arriving
                 byte = 0
                 for b in range(8):
                     byte |= s[i + 1 + b] << b
-                if s[i + 9] != 1:
-                    out.append(("framing", byte))
-                else:
-                    out.append(byte)
+                out.append(byte if s[i + 9] == 1 else ("framing", byte))
                 i += 10
             else:
                 i += 1
-        return out
+        return out, i
+
+    def received(self):
+        """All complete bytes in the TX samples so far."""
+        return self._decode()[0]
 
     def take(self):
-        """Return bytes received since the last call."""
-        r = self.received()
-        self.tx_samples = self.tx_samples[-0:] if False else []
-        return r
+        """Return bytes received since the last call; keep a byte still arriving."""
+        out, used = self._decode()
+        self.tx_samples = self.tx_samples[used:]
+        return out
