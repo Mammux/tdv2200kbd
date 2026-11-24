@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tdv(1) — configure the TDV 2200 keyboard USB adapter</title>
+<style>
+:root { color-scheme: light dark; --fg:#1d1d1f; --bg:#fbfaf7; --muted:#6b6b6b;
+        --rule:#dedbd2; --accent:#9a3412; --code-bg:#f1eee6; }
+@media (prefers-color-scheme: dark) {
+  :root { --fg:#e8e6e1; --bg:#1a1918; --muted:#9b978f; --rule:#3a3835;
+          --accent:#f0a46b; --code-bg:#262422; }
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg);
+       font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", sans-serif; }
+.page { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+code, pre, var { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .93em; }
+table.head, table.foot { width:100%; border-collapse:collapse; color:var(--muted);
+       font: 13px ui-monospace, Menlo, monospace; }
+table.head { border-bottom:1px solid var(--rule); margin-bottom:1rem; }
+table.foot { border-top:1px solid var(--rule); margin-top:3rem; }
+table.head td, table.foot td { padding:.4rem 0; }
+.head-vol { text-align:center; } .head-rtitle, .foot-os { text-align:right; }
+h1.Sh { font-size: .95rem; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--accent); margin:2.4rem 0 .6rem; padding-bottom:.25rem;
+        border-bottom:1px solid var(--rule); }
+h2.Ss { font-size: 1.05rem; margin:1.6rem 0 .4rem; }
+a.permalink { color:inherit; text-decoration:none; }
+section.Sh > p, section.Sh > div, section.Sh > dl, section.Ss > p,
+section.Ss > dl, section.Ss > div { margin-left: 1.5rem; }
+p.Pp, div.Pp { margin: .8rem 0; }
+.Nm, .Cm, .Fl { font-weight: 600; }
+code.Nm, code.Cm, code.Fl, code.Li, code.Ev { color: inherit; }
+var.Ar { font-style: italic; }
+table.Nm { border-collapse: collapse; margin: .1rem 0 .1rem 1.5rem; }
+table.Nm td { padding: .1rem 0; vertical-align: top; }
+table.Nm td:first-child { padding-right: .6em; white-space: nowrap; }
+section.Sh > table.Nm + br { display: none; }
+section.Sh > p.Pp:empty { margin: .4rem 0; }
+code.Li { background: var(--code-bg); padding: .05em .3em; border-radius: 3px; }
+pre code.Li { background: none; padding: 0; }
+.Pa { font-style: italic; }
+pre { background: var(--code-bg); padding: .75rem 1rem; border-radius: 6px;
+      overflow-x:auto; line-height:1.45; margin:.8rem 0; }
+div.Bd-indent { margin-left: 1.5rem; }
+dl.Bl-tag { display:grid; grid-template-columns: max-content 1fr; gap:.35rem 1.25rem; margin:.8rem 0; }
+dl.Bl-tag > dt { grid-column:1; }
+dl.Bl-tag > dd { grid-column:2; margin:0; }
+dl.Bl-tag > dd > p:first-child, dl.Bl-tag > dd > dl:first-child { margin-top:0; }
+@media (max-width: 40rem) {
+  dl.Bl-tag { display:block; }
+  dl.Bl-tag > dd { margin: .15rem 0 .8rem 1.25rem; }
+  section.Sh > p, section.Sh > div, section.Sh > dl, section.Ss > p,
+  section.Ss > dl, section.Ss > div { margin-left: 0; }
+}
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+<table class="head">
+  <tr>
+    <td class="head-ltitle">TDV(1)</td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle">TDV(1)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<section class="Sh">
+<h1 class="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+<p class="Pp"><code class="Nm">tdv</code> &#x2014; <span class="Nd">configure
+    the Tandberg TDV 2200 keyboard USB adapter</span></p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td>[<code class="Fl">-d</code> <var class="Ar">serial</var>]
+      [<code class="Fl">-q</code> | <code class="Fl">-v</code>]
+      <var class="Ar">command</var> [<var class="Ar">argument ...</var>]</td>
+  </tr>
+</table>
+<p class="Pp"></p>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">info</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">list</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">monitor</code> [<code class="Fl">--raw</code>]
+      [<code class="Fl">--log</code>]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">map</code> [<code class="Fl">-l</code>
+      <var class="Ar">layer</var>]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">get</code> [<code class="Fl">-l</code>
+      <var class="Ar">layer</var>] <var class="Ar">key</var></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">set</code> [<code class="Fl">-l</code>
+      <var class="Ar">layer</var>] <var class="Ar">key action</var></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">clear</code> [<code class="Fl">-l</code>
+      <var class="Ar">layer</var>] <var class="Ar">key</var></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">led</code> [<var class="Ar">led</var>
+      [<var class="Ar">source</var>]]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">option</code> [<var class="Ar">name</var>
+      [<var class="Ar">value</var>]]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">send</code> <var class="Ar">byte ...</var></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">keys</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">save</code> | <code class="Cm">revert</code> |
+      <code class="Cm">defaults</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">export</code> [<var class="Ar">file</var>]</td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">import</code> [<code class="Fl">--save</code>]
+      <var class="Ar">file</var></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">reboot</code> | <code class="Cm">bootloader</code></td>
+  </tr>
+</table>
+<br/>
+<table class="Nm">
+  <tr>
+    <td><code class="Nm">tdv</code></td>
+    <td><code class="Cm">completions</code> <var class="Ar">shell</var></td>
+  </tr>
+</table>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<p class="Pp">The TDV 2200 adapter is a Raspberry Pi Pico that connects a
+    Tandberg TDV 2200 terminal keyboard (Norsk Data ND 320) to a computer over
+    USB. To the computer it is an ordinary USB keyboard.
+    <code class="Nm">tdv</code> talks to the adapter over a separate USB
+    interface, so it can change the key map and other settings while the
+    keyboard is in use, without restarting it or installing a driver.</p>
+<p class="Pp">Changes take effect at once but are kept only in the adapter's
+    memory until <code class="Nm">tdv</code> <code class="Cm">save</code> writes
+    them to its flash. Unplugging the adapter before that brings back the saved
+    settings.</p>
+<section class="Ss">
+<h2 class="Ss" id="Keys"><a class="permalink" href="#Keys">Keys</a></h2>
+<p class="Pp">A <var class="Ar">key</var> is a position on the TDV 2200
+    keyboard. It can be given as the position name from the layout document,
+    such as <code class="Li">G51</code> or
+    <code class="Li">C1</code>, or as the key's legend, such as
+    <code class="Li">FUNK</code> or
+    <code class="Li">HJELP</code>. Case does not matter. Legends
+    with more than one word can be given by their first word
+    (<code class="Li">EKSP</code>) or quoted in full
+    (<code class="Li">EKSP INNS</code>). Number pad keys are
+    written with <code class="Li">np</code>, as in
+    <code class="Li">7np</code>. A legend that appears more than
+    once, or that matches a position name, is refused; use the position name
+    instead. <code class="Nm">tdv</code> <code class="Cm">keys</code> lists
+    every position with its legend.</p>
+<p class="Pp">The four keys in the modifier column are named
+    <code class="Cm">CAPS</code>, <code class="Cm">CTRL</code>,
+    <code class="Cm">LOCK</code> and <code class="Cm">SHIFT</code>.</p>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Actions"><a class="permalink" href="#Actions">Actions</a></h2>
+<p class="Pp">An <var class="Ar">action</var> says what a key sends.</p>
+<dl class="Bl-tag">
+  <dt><var class="Ar">usage</var></dt>
+  <dd>A USB keyboard key, by name: <code class="Li">A</code>,
+      <code class="Li">1</code>,
+      <code class="Li">Enter</code>,
+      <code class="Li">Escape</code>,
+      <code class="Li">Backspace</code>,
+      <code class="Li">Tab</code>,
+      <code class="Li">Space</code>,
+      <code class="Li">F1</code> to
+      <code class="Li">F24</code>,
+      <code class="Li">Up</code>,
+      <code class="Li">PageDown</code>,
+      <code class="Li">Home</code>,
+      <code class="Li">Insert</code>,
+      <code class="Li">Delete</code>,
+      <code class="Li">CapsLock</code>,
+      <code class="Li">NonUSBackslash</code> and so on, or as a
+      number from the USB HID keyboard page,
+      <code class="Li">0x68</code>. <code class="Nm">tdv</code>
+      <code class="Cm">set</code> <code class="Fl">--help</code> lists the
+      names. Keys are named by their position on a US keyboard; the computer's
+      keyboard layout decides which character they type.</dd>
+  <dt><var class="Ar">modifier</var><code class="Cm">+</code><var class="Ar">usage</var></dt>
+  <dd>A key together with modifiers, for example
+      <code class="Li">Ctrl+C</code> or
+      <code class="Li">Cmd+Shift+4</code>. Modifiers are
+      <code class="Cm">Ctrl</code>, <code class="Cm">Shift</code>,
+      <code class="Cm">Alt</code> (or <code class="Cm">Option</code>),
+      <code class="Cm">Gui</code> (or <code class="Cm">Cmd</code>,
+      <code class="Cm">Win</code>), and <code class="Cm">AltGr</code> (right
+      Alt); each can be prefixed with <code class="Cm">Left</code> or
+      <code class="Cm">Right</code>.</dd>
+  <dt><var class="Ar">modifier</var></dt>
+  <dd>A modifier on its own, such as
+      <code class="Li">LeftAlt</code>: the key then works like
+      that modifier key.</dd>
+  <dt><var class="Ar">media</var></dt>
+  <dd>A media key: <code class="Li">Mute</code>,
+      <code class="Li">VolumeUp</code>,
+      <code class="Li">VolumeDown</code>,
+      <code class="Li">PlayPause</code>,
+      <code class="Li">NextTrack</code>,
+      <code class="Li">PreviousTrack</code>,
+      <code class="Li">BrightnessUp</code>,
+      <code class="Li">BrightnessDown</code>.</dd>
+  <dt id="layer:"><a class="permalink" href="#layer:"><code class="Cm">layer:</code></a><var class="Ar">N</var></dt>
+  <dd>Switches to layer <var class="Ar">N</var> while the key is held.</dd>
+  <dt id="toggle:"><a class="permalink" href="#toggle:"><code class="Cm">toggle:</code></a><var class="Ar">N</var></dt>
+  <dd>Switches layer <var class="Ar">N</var> on or off each time the key is
+      pressed.</dd>
+  <dt id="text:"><a class="permalink" href="#text:"><code class="Cm">text:</code></a><var class="Ar">string</var></dt>
+  <dd>Types <var class="Ar">string</var> when the key is pressed. Only
+      characters on a US keyboard can be typed this way.</dd>
+  <dt id="seq:"><a class="permalink" href="#seq:"><code class="Cm">seq:</code></a><var class="Ar">action</var>,<var class="Ar">action
+    ...</var></dt>
+  <dd>Sends several keys one after another, for example
+      <code class="Li">seq:Ctrl+A,Delete</code>.</dd>
+  <dt id="none"><a class="permalink" href="#none"><code class="Cm">none</code></a></dt>
+  <dd>The key sends nothing.</dd>
+</dl>
+<p class="Pp">Quote actions that contain spaces or characters the shell treats
+    specially.</p>
+</section>
+<section class="Ss">
+<h2 class="Ss" id="Layers"><a class="permalink" href="#Layers">Layers</a></h2>
+<p class="Pp">There are four layers, numbered 0 to 3. Layer 0 is the normal key
+    map. While a higher layer is active, a key that has an action on that layer
+    sends it; a key with no action there sends its action from the layer below.
+    Commands that take <code class="Fl">-l</code> <var class="Ar">layer</var>
+    use layer 0 when it is left out.</p>
+</section>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="COMMANDS"><a class="permalink" href="#COMMANDS">COMMANDS</a></h1>
+<dl class="Bl-tag">
+  <dt id="info"><a class="permalink" href="#info"><code class="Cm">info</code></a></dt>
+  <dd>Shows the firmware version, the USB serial number, whether there are
+      unsaved changes, and the active layer.</dd>
+  <dt id="list"><a class="permalink" href="#list"><code class="Cm">list</code></a></dt>
+  <dd>Lists the adapters that are plugged in, by serial number.</dd>
+  <dt id="monitor"><a class="permalink" href="#monitor"><code class="Cm">monitor</code></a>
+    [<code class="Fl">--raw</code> | <code class="Fl">--log</code>]</dt>
+  <dd>Shows each key event as it happens, until interrupted with Ctrl-C: time
+      since the previous event, the byte from the keyboard, press or release,
+      the key's position and legend, and what was sent to the computer.
+    <div class="Bd Pp Bd-indent Li">
+    <pre>+  1250 ms  2f  press    G51  FUNK            -&gt; F13
++    96 ms  af  release  G51  FUNK            -&gt; F13
++   310 ms  00 70        SHIFT down           -&gt; LeftShift</pre>
+    </div>
+    <p class="Pp">With <code class="Fl">--raw</code>, shows only the bytes from
+        the keyboard, as the original sniffer did. With
+        <code class="Fl">--log</code>, also shows the adapter's log
+      messages.</p>
+  </dd>
+  <dt id="map"><a class="permalink" href="#map"><code class="Cm">map</code></a>
+    [<code class="Fl">-l</code> <var class="Ar">layer</var>]</dt>
+  <dd>Prints the key map of <var class="Ar">layer</var> as a table of position,
+      legend and action, with a mark on keys changed from the default.</dd>
+  <dt id="get"><a class="permalink" href="#get"><code class="Cm">get</code></a>
+    [<code class="Fl">-l</code> <var class="Ar">layer</var>]
+    <var class="Ar">key</var></dt>
+  <dd>Prints what <var class="Ar">key</var> sends.</dd>
+  <dt id="set"><a class="permalink" href="#set"><code class="Cm">set</code></a>
+    [<code class="Fl">-l</code> <var class="Ar">layer</var>] <var class="Ar">key
+    action</var></dt>
+  <dd>Makes <var class="Ar">key</var> send <var class="Ar">action</var>.</dd>
+  <dt id="clear"><a class="permalink" href="#clear"><code class="Cm">clear</code></a>
+    [<code class="Fl">-l</code> <var class="Ar">layer</var>]
+    <var class="Ar">key</var></dt>
+  <dd>On layer 0, gives <var class="Ar">key</var> back its default action. On a
+      higher layer, removes the key's action there, so it sends what it sends on
+      the layer below.</dd>
+  <dt id="led"><a class="permalink" href="#led"><code class="Cm">led</code></a>
+    [<var class="Ar">led</var> [<var class="Ar">source</var>]]</dt>
+  <dd>Without arguments, shows what each LED shows. With
+      <var class="Ar">led</var> and <var class="Ar">source</var>, makes the LED
+      show that state. <var class="Ar">led</var> is <code class="Cm">1</code> to
+      <code class="Cm">8</code>, <code class="Cm">caps</code> or
+      <code class="Cm">lock</code>. <var class="Ar">source</var> is one of the
+      computer's lock states, <code class="Cm">caps</code>,
+      <code class="Cm">num</code>, <code class="Cm">scroll</code>,
+      <code class="Cm">compose</code> or <code class="Cm">kana</code>;
+      <code class="Cm">layer:</code><var class="Ar">N</var> for an active layer;
+      or <code class="Cm">on</code> or <code class="Cm">off</code>. By default
+      the Caps LED shows the computer's Caps Lock state and the others are
+    off.</dd>
+  <dt id="option"><a class="permalink" href="#option"><code class="Cm">option</code></a>
+    [<var class="Ar">name</var> [<var class="Ar">value</var>]]</dt>
+  <dd>Without arguments, lists the options and their values. With
+      <var class="Ar">name</var>, shows one; with <var class="Ar">value</var> as
+      well, changes it.
+    <dl class="Bl-tag">
+      <dt id="click"><a class="permalink" href="#click"><code class="Cm">click</code></a>
+        <code class="Cm">on</code> |
+        <a class="permalink" href="#off"><code class="Cm" id="off">off</code></a></dt>
+      <dd>Key click from the keyboard's beeper on each key press. Default
+          <code class="Cm">off</code>.</dd>
+      <dt id="layer-beep"><a class="permalink" href="#layer-beep"><code class="Cm">layer-beep</code></a>
+        <code class="Cm">on</code> |
+        <a class="permalink" href="#off~2"><code class="Cm" id="off~2">off</code></a></dt>
+      <dd>A beep when a layer is toggled on or off. Default
+          <code class="Cm">off</code>.</dd>
+    </dl>
+  </dd>
+  <dt id="send"><a class="permalink" href="#send"><code class="Cm">send</code></a>
+    <var class="Ar">byte ...</var></dt>
+  <dd>Sends command bytes, in hexadecimal, straight to the keyboard, for example
+      <code class="Li">tdv send 24</code> to beep. See
+      <span class="Pa">docs/protocol.md</span> for the commands. After
+      <code class="Li">20</code> (reset) the adapter turns raw
+      mode back on by itself. Sending <code class="Li">36</code>
+      (raw mode off) to a keyboard with the patched original ROM makes it send
+      characters the adapter cannot translate, until
+      <code class="Li">31</code> is sent or the adapter is
+      plugged in again.</dd>
+  <dt id="keys"><a class="permalink" href="#keys"><code class="Cm">keys</code></a></dt>
+  <dd>Lists every key position with its legend and USB default.</dd>
+  <dt id="save"><a class="permalink" href="#save"><code class="Cm">save</code></a></dt>
+  <dd>Writes the current settings to the adapter's flash, so they are used from
+      the next time it is plugged in.</dd>
+  <dt id="revert"><a class="permalink" href="#revert"><code class="Cm">revert</code></a></dt>
+  <dd>Throws away unsaved changes and goes back to the saved settings.</dd>
+  <dt id="defaults"><a class="permalink" href="#defaults"><code class="Cm">defaults</code></a></dt>
+  <dd>Replaces the current settings with the built-in defaults. Use
+      <code class="Cm">save</code> afterwards to keep them.</dd>
+  <dt id="export"><a class="permalink" href="#export"><code class="Cm">export</code></a>
+    [<var class="Ar">file</var>]</dt>
+  <dd>Writes all settings, including unsaved changes, as a TOML file, or to
+      standard output if <var class="Ar">file</var> is left out.</dd>
+  <dt id="import"><a class="permalink" href="#import"><code class="Cm">import</code></a>
+    [<code class="Fl">--save</code>] <var class="Ar">file</var></dt>
+  <dd>Reads settings from a TOML file written by <code class="Cm">export</code>
+      or by hand. Settings the file leaves out keep their defaults. With
+      <code class="Fl">--save</code>, also saves them. A file with any error is
+      refused as a whole.</dd>
+  <dt id="reboot"><a class="permalink" href="#reboot"><code class="Cm">reboot</code></a></dt>
+  <dd>Restarts the adapter. Unsaved changes are lost.</dd>
+  <dt id="bootloader"><a class="permalink" href="#bootloader"><code class="Cm">bootloader</code></a></dt>
+  <dd>Restarts the adapter into the Pico's UF2 bootloader, where it shows up as
+      the <span class="Pa">RPI-RP2</span> drive, ready for new firmware.</dd>
+  <dt id="completions"><a class="permalink" href="#completions"><code class="Cm">completions</code></a>
+    <var class="Ar">shell</var></dt>
+  <dd>Prints a completion script for <var class="Ar">shell</var>:
+      <code class="Cm">bash</code>, <code class="Cm">zsh</code>,
+      <code class="Cm">fish</code> or <code class="Cm">powershell</code>.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt id="d"><a class="permalink" href="#d"><code class="Fl">-d</code></a>
+    <var class="Ar">serial</var>, <code class="Fl">--device</code>
+    <var class="Ar">serial</var></dt>
+  <dd>Uses the adapter with this serial number, as shown by
+      <code class="Cm">list</code>. Needed only when more than one adapter is
+      plugged in.</dd>
+  <dt id="l"><a class="permalink" href="#l"><code class="Fl">-l</code></a>
+    <var class="Ar">layer</var>, <code class="Fl">--layer</code>
+    <var class="Ar">layer</var></dt>
+  <dd>The layer, 0 to 3, for <code class="Cm">map</code>,
+      <code class="Cm">get</code>, <code class="Cm">set</code> and
+      <code class="Cm">clear</code>.</dd>
+  <dt id="q"><a class="permalink" href="#q"><code class="Fl">-q</code></a>,
+    <code class="Fl">--quiet</code></dt>
+  <dd>Prints only errors.</dd>
+  <dt id="v"><a class="permalink" href="#v"><code class="Fl">-v</code></a>,
+    <code class="Fl">--verbose</code></dt>
+  <dd>Also prints what is sent to and received from the adapter.</dd>
+  <dt id="h"><a class="permalink" href="#h"><code class="Fl">-h</code></a>,
+    <code class="Fl">--help</code></dt>
+  <dd>Prints help for <code class="Nm">tdv</code> or for a command.</dd>
+  <dt id="V"><a class="permalink" href="#V"><code class="Fl">-V</code></a>,
+    <code class="Fl">--version</code></dt>
+  <dd>Prints the version of <code class="Nm">tdv</code>.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="FILE_FORMAT"><a class="permalink" href="#FILE_FORMAT">FILE
+  FORMAT</a></h1>
+<p class="Pp"><code class="Cm">export</code> and <code class="Cm">import</code>
+    use TOML. Keys are named by position, and actions are written as for
+    <code class="Cm">set</code>.</p>
+<div class="Bd Pp Bd-indent Li">
+<pre># tdv export, firmware 0.2.0
+version = 1
+
+[layer.0]
+G51 = &quot;F13&quot;            # FUNK
+C99 = &quot;LeftAlt&quot;        # Squiggle
+G1  = &quot;text:make\n&quot;
+
+[layer.1]
+C8  = &quot;Up&quot;             # K
+B4  = &quot;Mute&quot;           # V
+
+[modifiers]
+LOCK = &quot;toggle:1&quot;
+
+[leds]
+caps = &quot;caps&quot;
+1    = &quot;layer:1&quot;
+
+[options]
+click = false</pre>
+</div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+<dl class="Bl-tag">
+  <dt id="TDV_DEVICE"><a class="permalink" href="#TDV_DEVICE"><code class="Ev">TDV_DEVICE</code></a></dt>
+  <dd>Serial number of the adapter to use, as for
+    <code class="Fl">-d</code>.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXIT_STATUS"><a class="permalink" href="#EXIT_STATUS">EXIT
+  STATUS</a></h1>
+<dl class="Bl-tag Bl-compact">
+  <dt>0</dt>
+  <dd>Success.</dd>
+  <dt>1</dt>
+  <dd>The adapter refused the command or reported an error.</dd>
+  <dt>2</dt>
+  <dd>Wrong arguments, an unknown key or action, or an invalid file.</dd>
+  <dt>3</dt>
+  <dd>No adapter found, or more than one and no <code class="Fl">-d</code>.</dd>
+  <dt>4</dt>
+  <dd>The adapter's firmware is too old or too new for this version of
+      <code class="Nm">tdv</code>.</dd>
+</dl>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="EXAMPLES"><a class="permalink" href="#EXAMPLES">EXAMPLES</a></h1>
+<p class="Pp">Make FUNK send F13, so the computer can bind it to anything:</p>
+<div class="Bd Bd-indent"><code class="Li">tdv set FUNK F13</code></div>
+<p class="Pp">Use LOCK to toggle layer 1, with the arrow keys on HJKL there, and
+    LED 1 lit while layer 1 is on:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>tdv set LOCK toggle:1
+tdv set -l 1 H Left
+tdv set -l 1 J Down
+tdv set -l 1 K Up
+tdv set -l 1 L Right
+tdv led 1 layer:1
+tdv save</pre>
+</div>
+<p class="Pp">Volume keys on P7 and P8:</p>
+<div class="Bd Bd-indent"><code class="Li">tdv set P7 VolumeDown; tdv set P8
+  VolumeUp</code></div>
+<p class="Pp">Keep a copy of the settings, then start again from the
+  defaults:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>tdv export &gt; tdv.toml
+tdv defaults
+tdv save</pre>
+</div>
+<p class="Pp">Find out what a key sends, by watching while pressing it:</p>
+<div class="Bd Bd-indent"><code class="Li">tdv monitor</code></div>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="RECOVERY"><a class="permalink" href="#RECOVERY">RECOVERY</a></h1>
+<p class="Pp">If a setting makes the keyboard unusable, hold ESC while plugging
+    the adapter in. It then starts with the built-in defaults and ignores the
+    saved settings until <code class="Cm">save</code> is used again.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
+<p class="Pp">On Linux, using the adapter without root needs a udev rule, for
+    example in <span class="Pa">/etc/udev/rules.d/70-tdv2200.rules</span>:</p>
+<div class="Bd Pp Bd-indent Li">
+<pre>SUBSYSTEM==&quot;usb&quot;, ATTR{idVendor}==&quot;1209&quot;, ATTR{idProduct}==&quot;0001&quot;, \
+  TAG+=&quot;uaccess&quot;</pre>
+</div>
+<p class="Pp">On Windows the adapter's descriptors make Windows load its WinUSB
+    driver by itself. macOS needs nothing.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<p class="Pp">The project repository,
+    <a class="Lk" href="https://github.com/Mammux/tdv2200kbd">https://github.com/Mammux/tdv2200kbd</a>,
+    and in it <span class="Pa">docs/rust-plan.md</span> (design),
+    <span class="Pa">docs/protocol.md</span> (keyboard commands) and
+    <span class="Pa">firmware/965313-0-layout.txt</span> (key positions and
+    legends).</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="HISTORY"><a class="permalink" href="#HISTORY">HISTORY</a></h1>
+<p class="Pp">This page was written before <code class="Nm">tdv</code> and
+    describes how it is meant to work. Until the Rust firmware reaches milestone
+    4, the adapter runs firmware without the configuration interface, and
+    <code class="Nm">tdv</code> cannot find it.</p>
+</section>
+<section class="Sh">
+<h1 class="Sh" id="BUGS"><a class="permalink" href="#BUGS">BUGS</a></h1>
+<p class="Pp">The USB ID 1209:0001 is a test ID and will change before
+  release.</p>
+</section>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">November 25, 2026</td>
+    <td class="foot-os">Debian</td>
+  </tr>
+</table>
+</div>
+</body>
+</html>

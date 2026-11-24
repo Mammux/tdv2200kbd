@@ -5,7 +5,8 @@ firmware in [`../usb`](../usb) is still the one to use as a keyboard.
 
 The command-line tool `tdv` isn't written yet; its man page
 [`tdv-cli/tdv.1`](tdv-cli/tdv.1) describes how it will work
-(`man ./tdv-cli/tdv.1` to read it).
+(`man ./tdv-cli/tdv.1` to read it, or open [`tdv-cli/tdv.1.html`](tdv-cli/tdv.1.html);
+`tdv-cli/make-html.sh` regenerates the HTML).
 
 ## Milestone 1: sniffer (`tdv-fw`)
 
