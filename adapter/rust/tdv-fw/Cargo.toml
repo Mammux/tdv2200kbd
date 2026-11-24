@@ -1,0 +1,28 @@
+[package]
+name = "tdv-fw"
+version = "0.1.0"
+edition = "2024"
+description = "TDV 2200 keyboard USB adapter firmware (RP2040, Embassy)"
+license = "MIT"
+publish = false
+
+[dependencies]
+embassy-executor = "0.10.0"
+embassy-rp = { version = "0.10.0", features = ["rp2040", "boot2-w25q080", "time-driver", "critical-section-impl", "executor-thread"] }
+embassy-sync = "0.8.0"
+embassy-time = "0.5.1"
+embassy-usb = "0.6.0"
+embassy-futures = "0.1.2"
+embedded-io-async = "0.7.0"
+
+cortex-m = { version = "0.7.7", features = ["inline-asm"] }
+cortex-m-rt = "0.7.5"
+heapless = "0.9"
+static_cell = "2.1"
+portable-atomic = { version = "1.5", features = ["critical-section"] }
+
+[profile.release]
+debug = 2          # symbols for a debugger; not stored on the Pico
+lto = true
+opt-level = "s"
+codegen-units = 1

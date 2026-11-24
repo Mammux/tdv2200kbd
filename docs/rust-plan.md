@@ -91,7 +91,7 @@ There's no second Pico to use as a debug probe. Options, cheapest first:
 
 ## Milestones
 
-1. **Skeleton:** Embassy project that receives from the keyboard and logs the bytes. Proves the UART setup.
+1. **Skeleton:** Embassy project that receives from the keyboard and logs the bytes. Proves the UART setup. *Written and builds (`adapter/rust/tdv-fw`, USB serial sniffer); not yet tried on the adapter.*
 2. **Same as the CircuitPython version:** translator, HID keyboard with the compiled-in map, Caps LED, resync after plug-in. Then the CircuitPython version can be retired.
 3. **USB polish:** boot protocol, 1 ms polling, media keys.
 4. **Configuration in RAM:** `postcard-rpc` endpoints and `tdv-cli` with `info`, `monitor`, `get`/`set` and LED mapping.

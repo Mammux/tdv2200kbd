@@ -37,6 +37,7 @@ an RS-422 serial link. This project has two parts:
 | Patched original ROM (raw mode on command) | Passes all emulator tests, not tried on hardware |
 | Raw-only ROM | Works on the real keyboard (in an AT28C16): correct press/release codes, `20` resets and reports `00 60` |
 | USB keyboard firmware (CircuitPython) | **Works**: the keyboard types on a Mac through the Pico, with the raw-only ROM |
+| Rust firmware (Embassy) | Milestone 1, a USB serial sniffer: builds, not yet tried on the Pico |
 
 ## Layout
 
@@ -45,6 +46,7 @@ an RS-422 serial link. This project has two parts:
 | [`docs/hardware.md`](docs/hardware.md) | Keyboard connector pinout, chips, memory and EEPROM replacements |
 | [`docs/protocol.md`](docs/protocol.md) | Serial protocol: original and raw mode |
 | [`docs/rust-plan.md`](docs/rust-plan.md) | Plan for the Rust adapter firmware and the `tdv` configuration tool |
+| [`adapter/rust/`](adapter/rust/) | Rust (Embassy) adapter firmware, work in progress |
 | [`docs/schematic-391170.pdf`](docs/schematic-391170.pdf) | Tandberg keyboard schematic, part no. 391170 (scan by Torfinn Ingolfsen) |
 | [`adapter/build-sheet.html`](adapter/build-sheet.html) | Adapter schematic, wiring, parts list and bring-up steps (open in a browser) |
 | [`adapter/code.py`](adapter/code.py) | CircuitPython sniffer: prints what the keyboard sends, sends hex bytes to it |

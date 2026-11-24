@@ -1,0 +1,9 @@
+[build]
+target = "thumbv6m-none-eabi"        # RP2040: Cortex-M0+
+
+[target.thumbv6m-none-eabi]
+# `cargo run` converts the program to UF2 and copies it to a Pico that is
+# in BOOTSEL mode (the RPI-RP2 drive). Install it with:
+#   cargo install elf2uf2-rs
+# With a debug probe, use instead:  runner = "probe-rs run --chip RP2040"
+runner = "elf2uf2-rs -d"
