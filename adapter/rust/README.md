@@ -56,3 +56,73 @@ Notes:
 * Flash layout in `memory.x`: the last 64 KB are kept free for the saved
   configuration (milestone 5).
 * A panic restarts the Pico rather than hanging.
+
+## Debugging with a Raspberry Pi
+
+A Raspberry Pi 2, 3 or 4 can act as the SWD debug probe (not a Pi 5: its
+GPIO pins work differently). Tested setup: a Pi 3 Model B.
+
+### Wiring
+
+The Pico's SWD pins are the three at the end opposite the USB connector
+(solder a 3-pin header there if it has none). Plain jumper wires, Pi to Pico:
+
+| Raspberry Pi header | Pico |
+|---|---|
+| pin 18 (GPIO 24) | SWDIO |
+| pin 22 (GPIO 25) | SWCLK |
+| pin 20 (GND) | GND (the middle SWD pin) |
+
+Don't connect any power wire: the Pico stays powered from its own USB cable.
+Keep the wires short (under ~20 cm).
+
+### On the Pi (once)
+
+Raspberry Pi OS:
+
+```sh
+sudo apt install openocd
+```
+
+Copy [`tools/pi-swd.cfg`](tools/pi-swd.cfg) to the Pi and check the
+connection:
+
+```sh
+openocd -f pi-swd.cfg -f target/rp2040.cfg
+```
+
+It should report two cores (`rp2040.core0`, `rp2040.core1`) and
+`Listening on port 3333 for gdb connections`. Ctrl-C stops it. If it says
+it can't open `/dev/gpiomem`, run it with `sudo` or add your user to the
+`gpio` group.
+
+### Flashing from the Mac
+
+With ssh access to the Pi set up:
+
+```sh
+cd adapter/rust
+cargo build --release --manifest-path tdv-fw/Cargo.toml
+TDV_PI=pi@raspberrypi.local tools/flash-via-pi.sh tdv-fw/target/thumbv6m-none-eabi/release/tdv-fw
+```
+
+The script copies the firmware to the Pi, writes it to the Pico's flash,
+checks it, and restarts the Pico. You don't need BOOTSEL.
+
+### Debugging with gdb
+
+Leave `openocd -f pi-swd.cfg -f target/rp2040.cfg` running on the Pi. On the
+Mac (`brew install arm-none-eabi-gdb`):
+
+```sh
+arm-none-eabi-gdb tdv-fw/target/thumbv6m-none-eabi/release/tdv-fw
+(gdb) target extended-remote raspberrypi.local:3333
+(gdb) load
+(gdb) monitor reset halt
+(gdb) break main
+(gdb) continue
+```
+
+The release build keeps debug information (`debug = 2`), so source lines
+and variables show up. With optimisation on, some variables are
+`<optimized out>`.

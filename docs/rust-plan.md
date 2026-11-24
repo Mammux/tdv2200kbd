@@ -86,7 +86,7 @@ Configuration files use the position names from the layout document
 There's no second Pico to use as a debug probe. Options, cheapest first:
 
 1. **No probe.** Flash UF2 files (BOOTSEL, later `tdv bootloader`). Log messages go over the vendor interface to `tdv monitor --log`. Enough for most of the work.
-2. **A Raspberry Pi as the probe.** OpenOCD can drive the Pico's SWD debug pins from a Raspberry Pi's GPIO header (three wires: SWCLK, SWDIO, GND). That gives flashing, breakpoints with `gdb`, and RTT logging. Works with a Pi that has the 40-pin header; check OpenOCD's GPIO driver for the Pi model used.
+2. **A Raspberry Pi as the probe** (chosen: a Pi 3 Model B). OpenOCD drives the Pico's SWD pins from the Pi's GPIO header (three wires). That gives flashing without BOOTSEL, breakpoints with `gdb`, and RTT logging. Setup in [`adapter/rust/README.md`](../adapter/rust/README.md#debugging-with-a-raspberry-pi).
 3. **A Raspberry Pi Debug Probe, or any second Pico** with the `debugprobe` firmware. Works directly with `probe-rs` and `defmt`, the smoothest setup.
 
 ## Milestones
