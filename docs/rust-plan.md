@@ -57,7 +57,7 @@ A Cargo workspace in `adapter/rust/`:
 | `tdv-fw` | Embassy tasks: keyboard UARTs, USB HID, LEDs, storage, configuration server | `thumbv6m-none-eabi` (RP2040) |
 | `tdv-cli` | Command-line tool | macOS, Windows, Linux |
 
-Example commands for `tdv-cli`:
+Example commands for `tdv-cli` (full specification: the man page [`adapter/rust/tdv-cli/tdv.1`](../adapter/rust/tdv-cli/tdv.1)):
 
 ```
 tdv info                      # firmware version, saved/unsaved changes

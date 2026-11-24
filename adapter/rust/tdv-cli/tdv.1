@@ -1,0 +1,502 @@
+.\" tdv(1): configure the TDV 2200 keyboard USB adapter.
+.\" Written ahead of the tool: it is the specification for tdv-cli.
+.Dd November 25, 2026
+.Dt TDV 1
+.Os
+.Sh NAME
+.Nm tdv
+.Nd configure the Tandberg TDV 2200 keyboard USB adapter
+.Sh SYNOPSIS
+.Nm
+.Op Fl d Ar serial
+.Op Fl q | v
+.Ar command
+.Op Ar argument ...
+.Pp
+.Nm
+.Cm info
+.Nm
+.Cm list
+.Nm
+.Cm monitor
+.Op Fl -raw
+.Op Fl -log
+.Nm
+.Cm map
+.Op Fl l Ar layer
+.Nm
+.Cm get
+.Op Fl l Ar layer
+.Ar key
+.Nm
+.Cm set
+.Op Fl l Ar layer
+.Ar key action
+.Nm
+.Cm clear
+.Op Fl l Ar layer
+.Ar key
+.Nm
+.Cm led
+.Op Ar led Op Ar source
+.Nm
+.Cm option
+.Op Ar name Op Ar value
+.Nm
+.Cm send
+.Ar byte ...
+.Nm
+.Cm keys
+.Nm
+.Cm save | revert | defaults
+.Nm
+.Cm export
+.Op Ar file
+.Nm
+.Cm import
+.Op Fl -save
+.Ar file
+.Nm
+.Cm reboot | bootloader
+.Nm
+.Cm completions
+.Ar shell
+.Sh DESCRIPTION
+The TDV 2200 adapter is a Raspberry Pi Pico that connects a Tandberg
+TDV 2200 terminal keyboard (Norsk Data ND 320) to a computer over USB.
+To the computer it is an ordinary USB keyboard.
+.Nm
+talks to the adapter over a separate USB interface, so it can change the
+key map and other settings while the keyboard is in use, without
+restarting it or installing a driver.
+.Pp
+Changes take effect at once but are kept only in the adapter's memory
+until
+.Nm
+.Cm save
+writes them to its flash.
+Unplugging the adapter before that brings back the saved settings.
+.Ss Keys
+A
+.Ar key
+is a position on the TDV 2200 keyboard.
+It can be given as the position name from the layout document, such as
+.Ql G51
+or
+.Ql C1 ,
+or as the key's legend, such as
+.Ql FUNK
+or
+.Ql HJELP .
+Case does not matter.
+Legends with more than one word can be given by their first word
+.Pq Ql EKSP
+or quoted in full
+.Pq Ql "EKSP INNS" .
+Number pad keys are written with
+.Ql np ,
+as in
+.Ql 7np .
+A legend that appears more than once, or that matches a position name,
+is refused; use the position name instead.
+.Nm
+.Cm keys
+lists every position with its legend.
+.Pp
+The four keys in the modifier column are named
+.Cm CAPS ,
+.Cm CTRL ,
+.Cm LOCK
+and
+.Cm SHIFT .
+.Ss Actions
+An
+.Ar action
+says what a key sends.
+.Bl -tag -width "layer:N"
+.It Ar usage
+A USB keyboard key, by name:
+.Ql A ,
+.Ql 1 ,
+.Ql Enter ,
+.Ql Escape ,
+.Ql Backspace ,
+.Ql Tab ,
+.Ql Space ,
+.Ql F1
+to
+.Ql F24 ,
+.Ql Up ,
+.Ql PageDown ,
+.Ql Home ,
+.Ql Insert ,
+.Ql Delete ,
+.Ql CapsLock ,
+.Ql NonUSBackslash
+and so on, or as a number from the USB HID keyboard page,
+.Ql 0x68 .
+.Nm
+.Cm set
+.Fl -help
+lists the names.
+Keys are named by their position on a US keyboard; the computer's
+keyboard layout decides which character they type.
+.It Ar modifier Ns Cm + Ns Ar usage
+A key together with modifiers, for example
+.Ql Ctrl+C
+or
+.Ql Cmd+Shift+4 .
+Modifiers are
+.Cm Ctrl ,
+.Cm Shift ,
+.Cm Alt
+.Pq or Cm Option ,
+.Cm Gui
+.Pq or Cm Cmd , Cm Win ,
+and
+.Cm AltGr
+.Pq right Alt ;
+each can be prefixed with
+.Cm Left
+or
+.Cm Right .
+.It Ar modifier
+A modifier on its own, such as
+.Ql LeftAlt :
+the key then works like that modifier key.
+.It Ar media
+A media key:
+.Ql Mute ,
+.Ql VolumeUp ,
+.Ql VolumeDown ,
+.Ql PlayPause ,
+.Ql NextTrack ,
+.Ql PreviousTrack ,
+.Ql BrightnessUp ,
+.Ql BrightnessDown .
+.It Cm layer: Ns Ar N
+Switches to layer
+.Ar N
+while the key is held.
+.It Cm toggle: Ns Ar N
+Switches layer
+.Ar N
+on or off each time the key is pressed.
+.It Cm text: Ns Ar string
+Types
+.Ar string
+when the key is pressed.
+Only characters on a US keyboard can be typed this way.
+.It Cm seq: Ns Ar action , Ns Ar action ...
+Sends several keys one after another, for example
+.Ql seq:Ctrl+A,Delete .
+.It Cm none
+The key sends nothing.
+.El
+.Pp
+Quote actions that contain spaces or characters the shell treats
+specially.
+.Ss Layers
+There are four layers, numbered 0 to 3.
+Layer 0 is the normal key map.
+While a higher layer is active, a key that has an action on that layer
+sends it; a key with no action there sends its action from the layer
+below.
+Commands that take
+.Fl l Ar layer
+use layer 0 when it is left out.
+.Sh COMMANDS
+.Bl -tag -width Ds
+.It Cm info
+Shows the firmware version, the USB serial number, whether there are
+unsaved changes, and the active layer.
+.It Cm list
+Lists the adapters that are plugged in, by serial number.
+.It Cm monitor Op Fl -raw | -log
+Shows each key event as it happens, until interrupted with Ctrl-C:
+time since the previous event, the byte from the keyboard, press or
+release, the key's position and legend, and what was sent to the
+computer.
+.Bd -literal -offset indent
++  1250 ms  2f  press    G51  FUNK            -> F13
++    96 ms  af  release  G51  FUNK            -> F13
++   310 ms  00 70        SHIFT down           -> LeftShift
+.Ed
+.Pp
+With
+.Fl -raw ,
+shows only the bytes from the keyboard, as the original sniffer did.
+With
+.Fl -log ,
+also shows the adapter's log messages.
+.It Cm map Op Fl l Ar layer
+Prints the key map of
+.Ar layer
+as a table of position, legend and action, with a mark on keys changed
+from the default.
+.It Cm get Oo Fl l Ar layer Oc Ar key
+Prints what
+.Ar key
+sends.
+.It Cm set Oo Fl l Ar layer Oc Ar key action
+Makes
+.Ar key
+send
+.Ar action .
+.It Cm clear Oo Fl l Ar layer Oc Ar key
+On layer 0, gives
+.Ar key
+back its default action.
+On a higher layer, removes the key's action there, so it sends what it
+sends on the layer below.
+.It Cm led Op Ar led Op Ar source
+Without arguments, shows what each LED shows.
+With
+.Ar led
+and
+.Ar source ,
+makes the LED show that state.
+.Ar led
+is
+.Cm 1
+to
+.Cm 8 ,
+.Cm caps
+or
+.Cm lock .
+.Ar source
+is one of the computer's lock states,
+.Cm caps ,
+.Cm num ,
+.Cm scroll ,
+.Cm compose
+or
+.Cm kana ;
+.Cm layer: Ns Ar N
+for an active layer;
+or
+.Cm on
+or
+.Cm off .
+By default the Caps LED shows the computer's Caps Lock state and the
+others are off.
+.It Cm option Op Ar name Op Ar value
+Without arguments, lists the options and their values.
+With
+.Ar name ,
+shows one; with
+.Ar value
+as well, changes it.
+.Bl -tag -width "layer-beep"
+.It Cm click Cm on | off
+Key click from the keyboard's beeper on each key press.
+Default
+.Cm off .
+.It Cm layer-beep Cm on | off
+A beep when a layer is toggled on or off.
+Default
+.Cm off .
+.El
+.It Cm send Ar byte ...
+Sends command bytes, in hexadecimal, straight to the keyboard, for
+example
+.Ql tdv send 24
+to beep.
+See
+.Pa docs/protocol.md
+for the commands.
+After
+.Ql 20
+(reset) the adapter turns raw mode back on by itself.
+Sending
+.Ql 36
+(raw mode off) to a keyboard with the patched original ROM makes it send
+characters the adapter cannot translate, until
+.Ql 31
+is sent or the adapter is plugged in again.
+.It Cm keys
+Lists every key position with its legend and USB default.
+.It Cm save
+Writes the current settings to the adapter's flash, so they are used
+from the next time it is plugged in.
+.It Cm revert
+Throws away unsaved changes and goes back to the saved settings.
+.It Cm defaults
+Replaces the current settings with the built-in defaults.
+Use
+.Cm save
+afterwards to keep them.
+.It Cm export Op Ar file
+Writes all settings, including unsaved changes, as a TOML file, or to
+standard output if
+.Ar file
+is left out.
+.It Cm import Oo Fl -save Oc Ar file
+Reads settings from a TOML file written by
+.Cm export
+or by hand.
+Settings the file leaves out keep their defaults.
+With
+.Fl -save ,
+also saves them.
+A file with any error is refused as a whole.
+.It Cm reboot
+Restarts the adapter.
+Unsaved changes are lost.
+.It Cm bootloader
+Restarts the adapter into the Pico's UF2 bootloader, where it shows up
+as the
+.Pa RPI-RP2
+drive, ready for new firmware.
+.It Cm completions Ar shell
+Prints a completion script for
+.Ar shell :
+.Cm bash ,
+.Cm zsh ,
+.Cm fish
+or
+.Cm powershell .
+.El
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl d Ar serial , Fl -device Ar serial
+Uses the adapter with this serial number, as shown by
+.Cm list .
+Needed only when more than one adapter is plugged in.
+.It Fl l Ar layer , Fl -layer Ar layer
+The layer, 0 to 3, for
+.Cm map ,
+.Cm get ,
+.Cm set
+and
+.Cm clear .
+.It Fl q , Fl -quiet
+Prints only errors.
+.It Fl v , Fl -verbose
+Also prints what is sent to and received from the adapter.
+.It Fl h , Fl -help
+Prints help for
+.Nm
+or for a command.
+.It Fl V , Fl -version
+Prints the version of
+.Nm .
+.El
+.Sh FILE FORMAT
+.Cm export
+and
+.Cm import
+use TOML.
+Keys are named by position, and actions are written as for
+.Cm set .
+.Bd -literal -offset indent
+# tdv export, firmware 0.2.0
+version = 1
+
+[layer.0]
+G51 = "F13"            # FUNK
+C99 = "LeftAlt"        # Squiggle
+G1  = "text:make\\n"
+
+[layer.1]
+C8  = "Up"             # K
+B4  = "Mute"           # V
+
+[modifiers]
+LOCK = "toggle:1"
+
+[leds]
+caps = "caps"
+1    = "layer:1"
+
+[options]
+click = false
+.Ed
+.Sh ENVIRONMENT
+.Bl -tag -width TDV_DEVICE
+.It Ev TDV_DEVICE
+Serial number of the adapter to use, as for
+.Fl d .
+.El
+.Sh EXIT STATUS
+.Bl -tag -width Ds -compact
+.It 0
+Success.
+.It 1
+The adapter refused the command or reported an error.
+.It 2
+Wrong arguments, an unknown key or action, or an invalid file.
+.It 3
+No adapter found, or more than one and no
+.Fl d .
+.It 4
+The adapter's firmware is too old or too new for this version of
+.Nm .
+.El
+.Sh EXAMPLES
+Make FUNK send F13, so the computer can bind it to anything:
+.Dl tdv set FUNK F13
+.Pp
+Use LOCK to toggle layer 1, with the arrow keys on HJKL there, and LED 1
+lit while layer 1 is on:
+.Bd -literal -offset indent
+tdv set LOCK toggle:1
+tdv set -l 1 H Left
+tdv set -l 1 J Down
+tdv set -l 1 K Up
+tdv set -l 1 L Right
+tdv led 1 layer:1
+tdv save
+.Ed
+.Pp
+Volume keys on P7 and P8:
+.Dl tdv set P7 VolumeDown; tdv set P8 VolumeUp
+.Pp
+Keep a copy of the settings, then start again from the defaults:
+.Bd -literal -offset indent
+tdv export > tdv.toml
+tdv defaults
+tdv save
+.Ed
+.Pp
+Find out what a key sends, by watching while pressing it:
+.Dl tdv monitor
+.Sh RECOVERY
+If a setting makes the keyboard unusable, hold ESC while plugging the
+adapter in.
+It then starts with the built-in defaults and ignores the saved
+settings until
+.Cm save
+is used again.
+.Sh NOTES
+On Linux, using the adapter without root needs a udev rule, for example
+in
+.Pa /etc/udev/rules.d/70-tdv2200.rules :
+.Bd -literal -offset indent
+SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="0001", \e
+  TAG+="uaccess"
+.Ed
+.Pp
+On Windows the adapter's descriptors make Windows load its WinUSB driver
+by itself.
+macOS needs nothing.
+.Sh SEE ALSO
+The project repository,
+.Lk https://github.com/Mammux/tdv2200kbd ,
+and in it
+.Pa docs/rust-plan.md
+(design),
+.Pa docs/protocol.md
+(keyboard commands) and
+.Pa firmware/965313-0-layout.txt
+(key positions and legends).
+.Sh HISTORY
+This page was written before
+.Nm
+and describes how it is meant to work.
+Until the Rust firmware reaches milestone 4, the adapter runs firmware
+without the configuration interface, and
+.Nm
+cannot find it.
+.Sh BUGS
+The USB ID 1209:0001 is a test ID and will change before release.

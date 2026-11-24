@@ -3,6 +3,10 @@
 Work in progress; see [the plan](../../docs/rust-plan.md). The CircuitPython
 firmware in [`../usb`](../usb) is still the one to use as a keyboard.
 
+The command-line tool `tdv` isn't written yet; its man page
+[`tdv-cli/tdv.1`](tdv-cli/tdv.1) describes how it will work
+(`man ./tdv-cli/tdv.1` to read it).
+
 ## Milestone 1: sniffer (`tdv-fw`)
 
 Same job as the CircuitPython sniffer (`../code.py`), written with
