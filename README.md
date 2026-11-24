@@ -44,6 +44,7 @@ an RS-422 serial link. This project has two parts:
 |---|---|
 | [`docs/hardware.md`](docs/hardware.md) | Keyboard connector pinout, chips, memory and EEPROM replacements |
 | [`docs/protocol.md`](docs/protocol.md) | Serial protocol: original and raw mode |
+| [`docs/rust-plan.md`](docs/rust-plan.md) | Plan for the Rust adapter firmware and the `tdv` configuration tool |
 | [`docs/schematic-391170.pdf`](docs/schematic-391170.pdf) | Tandberg keyboard schematic, part no. 391170 (scan by Torfinn Ingolfsen) |
 | [`adapter/build-sheet.html`](adapter/build-sheet.html) | Adapter schematic, wiring, parts list and bring-up steps (open in a browser) |
 | [`adapter/code.py`](adapter/code.py) | CircuitPython sniffer: prints what the keyboard sends, sends hex bytes to it |
