@@ -61,6 +61,13 @@ usual.
   `00 xx` modifier report. The firmware asks for one with `31` at start-up, and
   every half second until it gets one, so the order in which the Pico and
   keyboard start doesn't matter.
+* **Speed and debounce:** at start-up the firmware resets the keyboard and
+  checks whether its ROM has the 4800 baud and eager-press commands (only
+  those ROMs answer `3B`). If so it switches both on (`FAST` and `EAGER` at
+  the top of `code.py`), which cuts the delay from key down to USB from about
+  15 ms to about 6 ms. Older ROMs keep working at 2400 baud. With `FAST` on,
+  don't unplug and replug the keyboard cable while the Pico stays powered:
+  the keyboard restarts at 2400 baud. Unplug the USB cable instead.
 * **Glitches:** a release of a key that isn't down, or a second press of one
   that is, is ignored, so noise can't leave a key stuck.
 * **Key repeat** is done by the computer, as with any USB keyboard.

@@ -25,6 +25,8 @@ from tdv_translate import Translator  # noqa: E402
 
 RAW = open(os.path.join(FW, "tdv2200-raw.bin"), "rb").read()
 PATCHED = open(os.path.join(FW, "965313-0-rawmode.bin"), "rb").read()
+# a raw-only ROM without the speed/debounce commands, like the first version
+OLDER_RAW = open(os.path.join(FW, "c", "tdv2200-raw-c.bin"), "rb").read()
 ORIG = open(os.path.join(FW, "965313-0.bin"), "rb").read()
 REAL_KEYS = [k for k in range(3, 128) if ORIG[0x600 + k] != 0]
 SPECIAL_AL = 0x60            # AL1 + AL2, set on the prototype's keyboard
@@ -172,11 +174,32 @@ def run_code_py(rom, script):
     """
     kb = Keyboard(rom)
     kb.special = SPECIAL_AL
-    state = {"hid": None, "t": 0.0, "script": list(script), "sent": []}
+    state = {"hid": None, "t": 0.0, "script": list(script), "sent": [], "kb": kb}
+
+    state["pending"] = []
+
+    def collect():
+        state["pending"] += [x if isinstance(x, int) else x[1] for x in kb.take()]
+
+    def advance(ms):
+        kb.run_ms(ms)
+        state["t"] += ms / 1000
+        collect()
 
     class UART:
         def __init__(self, tx=None, rx=None, baudrate=9600, **kw):
             self.rx = rx is not None
+            if self.rx:
+                kb.baud = baudrate
+
+        @property
+        def baudrate(self):
+            return kb.baud
+
+        @baudrate.setter
+        def baudrate(self, v):
+            collect()                  # what arrived at the old speed
+            kb.baud = v
 
         @property
         def in_waiting(self):
@@ -190,13 +213,16 @@ def run_code_py(rom, script):
                     action(kb, state["hid"])
             else:
                 state["script"][0] = (ms - 2, action)
-            kb.run_ms(2)
-            state["t"] += 0.002
-            state["pending"] = kb.take()
+            advance(2)
             return len(state["pending"])
 
         def read(self, n):
-            return bytes(state.pop("pending", []))
+            data, state["pending"] = state["pending"][:n], state["pending"][n:]
+            return bytes(data) if data else None
+
+        def reset_input_buffer(self):
+            collect()
+            state["pending"] = []
 
         def write(self, data):
             state["sent"] += list(data)
@@ -223,7 +249,7 @@ def run_code_py(rom, script):
     saved = {m: sys.modules.get(m) for m in mods}
     sys.modules.update(mods)
     import time as _time
-    _time.sleep = lambda s: None
+    _time.sleep = lambda sec: advance(sec * 1000)
     real_mono = _time.monotonic
     _time.monotonic = lambda: state["t"]
     out = []
@@ -279,7 +305,16 @@ check("code.py: Caps LED follows the computer (32 then 33 sent)",
       state["sent"])
 check("code.py: 10 keys at once: the 7th and later are refused by USB, nothing stays down",
       not hid.down and any("more than 6 keys" in s for s in out), (sorted(hid.down), out[-5:]))
-check("code.py: sends 31 at start-up", state["sent"][:1] == [0x31], state["sent"])
+check("code.py: start-up: reset, 31, the 3B check, then eager on and 4800 baud",
+      state["sent"][:6] == [0x20, 0x31, 0x3B, 0x38, 0x3A, 0x31], state["sent"][:8])
+check("code.py: keyboard and adapter both at 4800 baud, eager presses on",
+      state["kb"].baud == 4800 and state["kb"].cpu.f0 == 1 and state["kb"].cpu.ram[5] == 0xFF
+      and any("4800 baud" in s for s in out), out[:3])
+
+state, out = run_code_py(OLDER_RAW, [(300, None), (0, press(0x40)), (60, None), (0, release_all), (60, None)])
+check("code.py with a ROM without the new commands: stays at 2400 baud and A works",
+      state["kb"].baud == 2400 and state["hid"].log == [("press", 0x04), ("release", 0x04)]
+      and any("2400 baud" in s for s in out), (state["hid"].log, out[:3]))
 
 state, out = run_code_py(PATCHED, [(300, None), (0, press(0x40)), (60, None), (0, release_all), (60, None)])
 check("code.py with the patched ROM: 31 turns raw mode on and A works",

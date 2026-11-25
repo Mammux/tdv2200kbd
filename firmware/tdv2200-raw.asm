@@ -6,9 +6,10 @@
 ;	tables, Shift/Ctrl translation, auto-repeat, LED blinking, ROM/RAM
 ;	tests, table dump and card reader (expansion) support are all gone.
 ;
-;	The serial code (timer interrupt) is copied from the original ROM.
+;	The serial timing is based on the original ROM's timer interrupt.
 ;
-;	Keyboard -> host, 2400 baud 8N1:
+;	Keyboard -> host, 8N1, 2400 baud after power-up or reset,
+;	4800 baud after command 3Ah:
 ;	  00h-7Fh  key k pressed, k = row*16 + column
 ;	  80h-FFh  key k released (k OR 80h)
 ;	  00h, xx  special column changed, xx = bitmap:
@@ -22,7 +23,18 @@
 ;	  24h      beep                25h      LEDs 1-8 off
 ;	  31h      report the special column again (raw mode is always on)
 ;	  32h/33h  Caps LED on/off     34h/35h  Lock LED on/off
+;	  38h/39h  eager key presses on/off (off after reset)
+;	  3Ah/3Bh  send at 4800/2400 baud (2400 after reset); the
+;	           keyboard finishes the byte it is sending, switches,
+;	           and then reports the special column ("00 xx")
 ;	  Anything else is ignored.
+;
+;	Debounce: a key change is reported once two scans in a row
+;	(7.1 ms apart) read the same state for that key. With eager
+;	presses on, a press is reported on the first scan that sees it;
+;	releases still need two equal scans, which also hides contact
+;	bounce after a press. A noise spike on a row line is then
+;	reported as a short key press.
 ;
 ;	Hardware (schematic 391170):
 ;	  P1.0-3 column select (74LS154)   P1.4 special column select
@@ -30,10 +42,12 @@
 ;	  P1.7   click enable              BUS  rows in (INS) / LED latch out (OUTL)
 ;	  P2.5   beep trigger (low pulse)  P2.6 Lock LED   P2.7 Caps LED
 ;	  T0     RX data                   timer: 5.76 MHz / 480 / 5 = 2400 Hz
+;	  F0     1 = send at 4800 baud
 ;
 ;	RAM:
 ;	  00h-07h  bank 0: r0 TX write ptr, r1 column state ptr, r2 column,
-;	           r3 bytes in TX buffer, r6/r7 scratch
+;	           r3 bytes in TX buffer, r5 eager mask (00h/FFh),
+;	           r6/r7 scratch
 ;	  08h-0Bh  stack (2 levels: one call + the timer interrupt)
 ;	  0Ch      special column: last value reported
 ;	  0Dh      special column: last value read (debounce)
@@ -54,76 +68,24 @@ Reset:
 	nop
 	nop
 
-;///////////////////////////////////////////////////////
-;	Timer interrupt, 2400 Hz: one TX bit per tick, RX sampled
-;	at 4 ticks per bit (600 baud). Copied from the original ROM.
-
-TimerInt:				; 007h
-	sel	rb1
-	mov	r7,a
-	clr	f1			; tell Main a tick has passed
-	mov	a,#0FBH
-	mov	t,a
-	djnz	r3,TransmitBit
-	inc	r3
-	mov	a,r2
-	jnz	ReceiveBit
-	jt0	TransmitBit		; line idle
-	mov	r2,#008H		; start bit seen
-	mov	r3,#006H		; first sample in the middle of bit 0
-	jmp	TransmitBit
-ReceiveBit:
-	mov	r3,#004H
-	mov	a,r4
-	clr	c
-	jnt0	ReceiveAny
-	cpl	c
-ReceiveAny:
-	rrc	a
-	mov	r4,a
-	djnz	r2,TransmitBit
-	mov	r3,#006H
-	xrl	a,#020H			; command 20h: reset
-	jnz	TransmitBit
-	mov	r1,#008H		; return address on the stack := 000h
-	mov	@r1,a
-	inc	r1
-	mov	@r1,a
-	inc	a
-	mov	psw,a
-	retr
-TransmitBit:
-	mov	a,r5
-	jz	TimerIntEnd
-	dec	a
-	mov	r5,a
-	jz	TransmitEnd
-	xrl	a,#009H
-	jz	TransmitLow		; start bit
-	mov	a,r6
-	rrc	a
-	mov	r6,a
-	jc	TransmitHigh
-TransmitLow:
-	anl	p1,#0DFH
-	orl	p1,#040H
-	jmp	TimerIntEnd
-TransmitEnd:
-	anl	p1,#0BFH		; stop bit / idle
-TransmitHigh:
-	orl	p1,#020H
-TimerIntEnd:
-	mov	a,r7
-	retr
+TimerInt:				; 007h: the routine is in page 2
+	jmp	TimerIsr
 
 ;///////////////////////////////////////////////////////
 ;	Main loop: one column per timer tick, 16 columns + the
 ;	special column = one scan every 7.1 ms.
+;
+;	Each round starts right after a timer interrupt. The interrupt
+;	changes P1.5 (TX), and the column select below reads P1, changes
+;	it and writes it back: if an interrupt came in between, a TX bit
+;	would be lost. Waiting for a fresh tick keeps them apart.
 
 Main:
-	jf1	Main
-	sel	rb0
+	clr	f1
 	cpl	f1
+MainWait:
+	jf1	MainWait		; the interrupt clears F1
+	sel	rb0
 	mov	a,r2
 	jb4	Special
 	in	a,p1
@@ -135,11 +97,17 @@ Main:
 	nop				; (mov a,r4 / jb7) before it reads them
 	ins	a,bus			; rows of this column
 	xch	a,@r1			; last read := now, a = previous read
-	xrl	a,@r1
-	jnz	ColSkip2		; still changing: wait (debounce)
-	mov	a,@r1			; stable state
+	xrl	a,@r1			; keys that changed since the last scan
+	cpl	a			; keys that read the same twice
+	mov	r7,a
+	mov	a,@r1
+	anl	a,r5			; eager: keys down now may be reported too
+	orl	a,r7
+	mov	r7,a			; keys that may be reported
+	mov	a,@r1			; now
 	inc	r1			; r1 -> last reported
-	xrl	a,@r1			; bits that differ from what was reported
+	xrl	a,@r1			; keys that differ from what was reported
+	anl	a,r7
 	jz	ColSkip1
 	mov	r7,a
 	mov	a,r3
@@ -169,9 +137,6 @@ RowDone:
 	orl	a,r6
 	add	a,r2			; + column
 	call	TxByte
-	jmp	ColSkip1
-ColSkip2:
-	inc	r1
 ColSkip1:
 	inc	r1
 	inc	r2
@@ -254,14 +219,14 @@ LedOut:
 ToCmd2x:
 	jmp	Cmd2x
 
-;	Commands 20h-35h. JMPP stays inside its page, so the dispatch
+;	Commands 20h-3Bh. JMPP stays inside its page, so the dispatch
 ;	table and all handlers live together in page 1.
 
 	org	00100H
 Cmd2x:
-	add	a,#0CAH			; carry if command >= 36h
+	add	a,#0C4H			; carry if command >= 3Ch
 	jc	CmdNone
-	add	a,#CmdTbl+16H		; a = CmdTbl + (command - 20h)
+	add	a,#CmdTbl+1CH		; a = CmdTbl + (command - 20h)
 	jmpp	@a
 CmdTbl:
 	db	CmdNone, CmdClkOn, CmdClkOff, CmdNone	; 20h-23h
@@ -269,7 +234,8 @@ CmdTbl:
 	db	CmdNone, CmdNone, CmdNone, CmdNone	; 28h-2Bh
 	db	CmdNone, CmdNone, CmdNone, CmdNone	; 2Ch-2Fh
 	db	CmdNone, CmdReport, CmdCapsOn, CmdCapsOff	; 30h-33h
-	db	CmdLockOn, CmdLockOff			; 34h-35h
+	db	CmdLockOn, CmdLockOff, CmdNone, CmdNone	; 34h-37h
+	db	CmdEagerOn, CmdEagerOff, CmdFast, CmdSlow	; 38h-3Bh
 CmdNone:
 	jmp	Main
 CmdClkOn:
@@ -303,6 +269,25 @@ CmdLockOn:
 CmdLockOff:
 	anl	p2,#0BFH
 	jmp	Main
+CmdEagerOn:
+	sel	rb0
+	mov	r5,#0FFH
+	jmp	Main
+CmdEagerOff:
+	sel	rb0
+	mov	r5,#000H
+	jmp	Main
+CmdFast:
+	mov	a,r5			; wait until the byte being sent is done
+	jnz	CmdFast
+	clr	f0
+	cpl	f0
+	jmp	CmdReport
+CmdSlow:
+	mov	a,r5
+	jnz	CmdSlow
+	clr	f0
+	jmp	CmdReport
 
 ;///////////////////////////////////////////////////////
 ;	TxByte: put A in the TX ring buffer (bank 0). The caller
@@ -333,9 +318,10 @@ LedTbl:
 Init:
 	dis	tcnti
 	dis	i
+	clr	f0			; 2400 baud
 	mov	r0,#03FH
 ClearRam:
-	mov	@r0,#000H
+	mov	@r0,#000H		; also: eager presses off (r5 = 00h)
 	djnz	r0,ClearRam
 	mov	a,#030H
 	outl	p2,a			; LEDs off, beep idle
@@ -355,3 +341,229 @@ ClearRam:
 	strt	t
 	en	tcnti
 	jmp	Main
+
+;///////////////////////////////////////////////////////
+;	Timer interrupt, 2400 Hz.
+;
+;	TX: one bit per tick at 2400 baud; at 4800 baud a second bit
+;	exactly 80 cycles after the first. Each TX slot takes the same
+;	number of cycles whatever it sends, so the bit edges fall on
+;	an exact grid. RX: sampled at 4 ticks per bit (600 baud).
+;
+;	Cycle counts are in the comments; the timing is checked in
+;	the emulator (timing_check.py).
+
+	org	00200H
+TimerIsr:
+	sel	rb1
+	mov	r7,a
+	clr	f1			; tell Main a tick has passed
+	mov	a,#0FBH
+	mov	t,a
+
+;	TX slot 1. r5 = bits left: 10 -> start bit (9), data (8-1),
+;	stop bit (0). The P1.5 write starts 16 cycles into the slot
+;	on every path that sends a bit; all of those take 22 cycles.
+TxSlot1:
+	mov	a,r5			; 1
+	jz	TxDone1			; 3: idle
+	dec	a			; 4
+	mov	r5,a			; 5
+	jz	TxStop1			; 7
+	xrl	a,#009H			; 9
+	jz	TxStart1		; 11
+	mov	a,r6			; 12
+	rrc	a			; 13
+	mov	r6,a			; 14
+	jc	TxHigh1			; 16
+	anl	p1,#0DFH		; 18: data 0
+	nop				; 19
+	nop				; 20
+	jmp	TxDone1			; 22
+TxHigh1:
+	orl	p1,#020H		; 18: data 1
+	nop				; 19
+	nop				; 20
+	jmp	TxDone1			; 22
+TxStop1:
+	nop				; 8
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop				; 16
+	orl	p1,#020H		; 18: stop bit
+	anl	p1,#0BFH		; 20: TX active off
+	jmp	TxDone1			; 22
+TxStart1:
+	nop				; 12
+	nop
+	nop
+	nop
+	nop				; 16
+	anl	p1,#0DFH		; 18: start bit
+	orl	p1,#040H		; 20: TX active on (key click)
+	jmp	TxDone1			; 22
+TxDone1:
+	jf0	TxFast			; 24
+
+;	RX, 600 baud: 4 ticks per bit. Copied from the original ROM.
+RxSlow:
+	djnz	r3,TimerIntEnd
+	inc	r3
+	mov	a,r2
+	jnz	RxSlowBit
+	jt0	TimerIntEnd		; line idle
+	mov	r2,#008H		; start bit seen
+	mov	r3,#006H		; first sample in the middle of bit 0
+	jmp	TimerIntEnd
+RxSlowBit:
+	mov	r3,#004H
+	mov	a,r4
+	clr	c
+	jnt0	RxSlowAny
+	cpl	c
+RxSlowAny:
+	rrc	a
+	mov	r4,a
+	djnz	r2,TimerIntEnd
+	mov	r3,#006H
+	xrl	a,#020H			; command 20h: reset
+	jz	RxReset
+TimerIntEnd:
+	mov	a,r7
+	retr
+
+RxReset:
+	mov	r1,#008H		; return address on the stack := 000h
+	mov	@r1,a			; (a = 0)
+	inc	r1
+	mov	@r1,a
+	inc	a
+	mov	psw,a			; stack pointer 1, F0 = 0 (2400 baud)
+	retr
+
+;	4800 baud: RX in a version that always takes 32 cycles, a
+;	delay, then the second TX slot 80 cycles after the first.
+TxFast:
+	mov	a,r5			; 25
+	jz	RxSlow			; 27: nothing more to send this tick
+	djnz	r3,RxFastWait		; 29
+	inc	r3			; 30
+	mov	a,r2			; 31
+	jnz	RxFastBit		; 33
+	jt0	RxFastIdle		; 35: line idle
+	mov	r2,#008H		; 37: start bit seen
+	mov	r3,#006H		; 39
+	nop				; 40
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop				; 46
+	jmp	RxFastDone		; 48
+RxFastWait:				; 29
+	nop				; 30
+	nop
+	nop
+	nop
+	nop
+	nop				; 35
+RxFastIdle:				; 35
+	nop				; 36
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop				; 45
+	nop				; 46
+	jmp	RxFastDone		; 48
+RxFastBit:				; 33
+	mov	r3,#004H		; 35
+	mov	a,r4			; 36
+	clr	c			; 37
+	jnt0	RxFastZero		; 39
+	cpl	c			; 40
+	jmp	RxFastAny		; 42
+RxFastZero:				; 39
+	nop				; 40
+	nop				; 41
+	nop				; 42
+RxFastAny:
+	rrc	a			; 43
+	mov	r4,a			; 44
+	djnz	r2,RxFastMid		; 46
+	mov	r3,#006H		; 48: byte complete
+	xrl	a,#020H			; 50
+	jz	RxReset			; 52
+	jmp	RxFastDone2		; 54
+RxFastMid:				; 46
+	nop				; 47
+	nop				; 48
+RxFastDone:				; 48
+	nop				; 49
+	nop
+	nop
+	nop
+	nop
+	nop				; 54
+RxFastDone2:				; 54
+	mov	a,#008H			; 56
+RxFastDelay:
+	dec	a
+	jnz	RxFastDelay		; 56 + 8 * 3 = 80
+
+;	TX slot 2: same as slot 1, 80 cycles later.
+TxSlot2:
+	mov	a,r5
+	jz	TimerIntEnd2
+	dec	a
+	mov	r5,a
+	jz	TxStop2
+	xrl	a,#009H
+	jz	TxStart2
+	mov	a,r6
+	rrc	a
+	mov	r6,a
+	jc	TxHigh2
+	anl	p1,#0DFH		; data 0
+	nop
+	nop
+	jmp	TimerIntEnd2
+TxHigh2:
+	orl	p1,#020H		; data 1
+	nop
+	nop
+	jmp	TimerIntEnd2
+TxStop2:
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	orl	p1,#020H		; stop bit
+	anl	p1,#0BFH		; TX active off
+	jmp	TimerIntEnd2
+TxStart2:
+	nop
+	nop
+	nop
+	nop
+	nop
+	anl	p1,#0DFH		; start bit
+	orl	p1,#040H		; TX active on
+TimerIntEnd2:
+	mov	a,r7
+	retr

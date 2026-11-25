@@ -5,6 +5,8 @@
 //! the serial port are sent to the keyboard (600 baud on GP4):
 //!
 //!   hex bytes, e.g. `24` or `32 24`   send them to the keyboard
+//!   `baud 2400` / `baud 4800`         receive from the keyboard at that speed
+//!                                     (send `3a` first to switch the keyboard)
 //!   `boot`                            restart into the UF2 bootloader
 //!   `help`                            list the commands
 //!
@@ -185,7 +187,16 @@ async fn console_in_task(mut usb_in: Receiver<'static, UsbDriver>) -> ! {
 async fn run_command(cmd: &str) {
     match cmd {
         "help" => {
-            CONSOLE.send(text("hex bytes (e.g. 24) = send to keyboard, boot = UF2 bootloader\r\n")).await;
+            CONSOLE.send(text("hex bytes (e.g. 24) = send to keyboard\r\n")).await;
+            CONSOLE.send(text("baud 2400 | baud 4800 = receive speed\r\n")).await;
+            CONSOLE.send(text("boot = UF2 bootloader\r\n")).await;
+        }
+        "baud 2400" | "baud 4800" => {
+            let baud = if cmd.ends_with("4800") { 4800 } else { 2400 };
+            set_kbd_in_baud(baud);
+            let mut msg = Line::new();
+            let _ = write!(msg, "receiving at {} baud\r\n", baud);
+            CONSOLE.send(msg).await;
         }
         "boot" => {
             CONSOLE.send(text("restarting into the UF2 bootloader\r\n")).await;
@@ -205,6 +216,17 @@ async fn run_command(cmd: &str) {
             _ => CONSOLE.send(text("?? type hex bytes like: 24, or help\r\n")).await,
         },
     }
+}
+
+/// Change the receive speed from the keyboard (UART0). `BufferedUartRx` has
+/// no method for it, so this sets the PL011 divisor the way embassy-rp does.
+fn set_kbd_in_baud(baud: u32) {
+    use embassy_rp::pac;
+    let r = pac::UART0;
+    let div = 8 * embassy_rp::clocks::clk_peri_freq() / baud;
+    r.uartibrd().write_value(pac::uart::regs::Uartibrd(div >> 7));
+    r.uartfbrd().write_value(pac::uart::regs::Uartfbrd(((div & 0x7f) + 1) / 2));
+    r.uartlcr_h().modify(|_| {}); // the divisor takes effect on a write to LCR_H
 }
 
 fn parse_hex(s: &str) -> Option<Vec<u8, 32>> {

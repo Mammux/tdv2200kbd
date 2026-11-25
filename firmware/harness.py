@@ -1,19 +1,36 @@
 """Test harness: TDV 2200 keyboard board around the MCS-48 emulator."""
+from bisect import bisect_right
+
 from mcs48 import CPU
 
-TICK_HZ = 2400          # timer interrupt rate = TX bit rate
+TICK_HZ = 2400          # timer interrupt rate (and TX bit rate at 2400 baud)
+CYCLES_PER_S = 384000   # 5.76 MHz / 15
 
 
 class Keyboard:
-    def __init__(self, rom):
+    def __init__(self, rom, baud=2400):
         self.cpu = CPU(rom)
         self.keys = set()          # pressed matrix keys, index 0x00-0x7F
         self.special = 0x00        # special column bitmap (CAPS, CTRL, LOCK, SHIFT, ...)
         self.ticks = 0
-        self.tx_samples = []
+        self.baud = baud           # what the host's receiver is set to
+        self.edge_t = []           # TX line (P1.5) changes: cycle ...
+        self.edge_v = []           # ... and the new level
+        self._tx = 1
+        self._pos = 0              # cycle where the next take() starts looking
         self.rx_bits = []          # pending T0 levels, one per tick
         self.cpu.read_bus = self._bus
         self.cpu.on_tick = self._tick
+        step = self.cpu.step
+
+        def step_and_watch_tx():
+            step()
+            v = (self.cpu.p1 >> 5) & 1
+            if v != self._tx:
+                self._tx = v
+                self.edge_t.append(self.cpu.cycles)
+                self.edge_v.append(v)
+        self.cpu.step = step_and_watch_tx
 
     # BUS read: P1.0-3 selects a column via the 74LS154, P1.4 selects the special column
     def _bus(self, cpu):
@@ -28,7 +45,6 @@ class Keyboard:
 
     def _tick(self, cpu):
         self.ticks += 1
-        self.tx_samples.append((cpu.p1 >> 5) & 1)
         cpu.t0 = self.rx_bits.pop(0) if self.rx_bits else 1
 
     def run_ticks(self, n):
@@ -45,34 +61,45 @@ class Keyboard:
         for b in bits:
             self.rx_bits += [b] * 4
 
-    def _decode(self):
-        """Decode keyboard -> host bytes from TX samples (1 sample per bit).
+    def level(self, t):
+        """TX line level at cycle t."""
+        i = bisect_right(self.edge_t, t)
+        return self.edge_v[i - 1] if i else 1
 
-        Returns (bytes, used): used is how many samples were consumed. A byte
-        whose start bit has arrived but whose stop bit hasn't yet is left for
-        the next call.
+    def _decode(self):
+        """Decode keyboard -> host bytes like a UART set to self.baud.
+
+        From self._pos: wait for a falling edge, sample each bit in its
+        middle, check the stop bit, then look for the next start bit after
+        the middle of the stop bit. Returns (bytes, position). A byte whose
+        stop bit hasn't arrived yet is left for the next call. Framing errors
+        come back as ("framing", byte).
         """
-        s = self.tx_samples
-        out, i = [], 0
-        while i < len(s):
-            if s[i] == 0:
-                if i + 9 >= len(s):
-                    break                      # byte still arriving
-                byte = 0
-                for b in range(8):
-                    byte |= s[i + 1 + b] << b
-                out.append(byte if s[i + 9] == 1 else ("framing", byte))
-                i += 10
-            else:
+        bit = CYCLES_PER_S / self.baud
+        now = self.cpu.cycles
+        out, pos = [], self._pos
+        i = bisect_right(self.edge_t, pos)
+        while i < len(self.edge_t):
+            t, v = self.edge_t[i], self.edge_v[i]
+            if v != 0:
                 i += 1
-        return out, i
+                continue
+            if t + 9.5 * bit > now:
+                break                          # byte still arriving
+            samples = [self.level(t + (k + 0.5) * bit) for k in range(10)]
+            pos = t + 9.5 * bit
+            i = bisect_right(self.edge_t, pos)
+            if samples[0] != 0:
+                continue                       # glitch, not a start bit
+            byte = sum(b << k for k, b in enumerate(samples[1:9]))
+            out.append(byte if samples[9] == 1 else ("framing", byte))
+        return out, pos
 
     def received(self):
-        """All complete bytes in the TX samples so far."""
+        """Complete bytes since the last take(), without consuming them."""
         return self._decode()[0]
 
     def take(self):
         """Return bytes received since the last call; keep a byte still arriving."""
-        out, used = self._decode()
-        self.tx_samples = self.tx_samples[used:]
+        out, self._pos = self._decode()
         return out

@@ -62,8 +62,8 @@ prototype's keyboard both are always set, so it reports `00 60` at rest.
 A host should take modifiers from bits 1–4 and 7 only.
 After power-up, or after plugging the cable in, treat incoming bytes as noise
 until the first `00 xx` report, and ignore releases of keys that aren't down.
-Keys are debounced (two equal reads about 7 ms apart). There is no
-auto-repeat in raw mode; the host does that.
+Keys are debounced (two equal reads about 7 ms apart; per key in the
+raw-only ROM). There is no auto-repeat in raw mode; the host does that.
 
 Host → keyboard:
 
@@ -76,7 +76,43 @@ Host → keyboard:
 | `32` / `33` | Caps LED on / off | Caps LED on / off |
 | `34` / `35` | Lock LED on / off | Lock LED on / off |
 | `36` | Raw mode off | Ignored |
+| `38` / `39` | Ignored | Eager key presses on / off |
+| `3A` / `3B` | Ignored | Send at 4800 / 2400 baud, then report the special column |
 | other | As original | Ignored |
 
 The raw-only ROM also sends the special-column report by itself at power-up
 and after reset. An adapter that sends `31` at start-up works with both images.
+
+### Speed and debounce options (raw-only ROM, November 2026 and later)
+
+Both are off after power-up and after `20`, so an adapter that doesn't know
+about them works as before.
+
+* **`3A` / `3B`: 4800 / 2400 baud** from keyboard to host. The keyboard
+  finishes the byte it is sending, switches, and reports the special column
+  (`00 xx`) at the new speed. Bytes still queued go out at the new speed too,
+  so the host should switch its receiver and ignore what it gets until that
+  `00 xx`. Host → keyboard stays at 600 baud.
+  The timer still runs at 2400 Hz; at 4800 baud the interrupt sends a second
+  bit exactly 80 cycles after the first. Bit edges are within one CPU cycle
+  (0.3 µs) of the ideal at both speeds.
+* **`38` / `39`: eager key presses on / off.** On: a press is reported on the
+  first scan that sees it instead of the second. Releases still need two
+  equal scans, which also hides contact bounce after a press (bounce shorter
+  than one scan, 7.1 ms). The cost: a noise spike on a row line becomes a
+  short key press. The modifier column is always debounced.
+* **Detecting the options:** only ROMs that have them answer `3B` (at
+  2400 baud) with `00 xx`; older ROMs send nothing. The CircuitPython
+  adapter firmware uses this to decide.
+
+Measured in the emulator, from key down to the end of the byte at the host
+(300 presses at random times; key travel not included):
+
+| Mode | Mean | Range |
+|---|---|---|
+| 2400 baud, defer (default) | 15.2 ms | 11.5–18.6 ms |
+| 4800 baud, defer | 12.9 ms | 9.5–16.6 ms |
+| 2400 baud, eager | 8.1 ms | 4.4–11.5 ms |
+| 4800 baud, eager | 5.8 ms | 2.5–9.5 ms |
+
+The key click (P1.6 high while a byte is sent) is half as long at 4800 baud.

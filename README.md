@@ -35,7 +35,7 @@ an RS-422 serial link. This project has two parts:
 | Adapter PCB (KiCad) | Schematic done, parts placed, not routed |
 | Sniffer firmware (CircuitPython) | Works on the Pico with the keyboard |
 | Patched original ROM (raw mode on command) | Passes all emulator tests, not tried on hardware |
-| Raw-only ROM | Works on the real keyboard (in an AT28C16): correct press/release codes, `20` resets and reports `00 60` |
+| Raw-only ROM | Works on the real keyboard (in an AT28C16): correct press/release codes, `20` resets and reports `00 60`. The new version with optional 4800 baud and eager presses (about 6 ms instead of 15 ms from key to host) passes all emulator tests, not tried on hardware |
 | USB keyboard firmware (CircuitPython) | **Works**: the keyboard types on a Mac through the Pico, with the raw-only ROM |
 | Rust firmware (Embassy) | Milestone 1, a USB serial sniffer: builds, not yet tried on the Pico |
 

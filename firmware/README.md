@@ -5,7 +5,7 @@ Two images for ROM socket U8 (2716). Use either one with the USB adapter:
 | Image | What it is |
 |---|---|
 | `965313-0-rawmode.bin` | Original firmware plus a raw mode the adapter turns on with `31`. Still works in a terminal. |
-| `tdv2200-raw.bin` | New raw-only firmware (about 390 bytes). Raw mode is always on; everything else is removed. |
+| `tdv2200-raw.bin` | New raw-only firmware (about 750 bytes). Raw mode is always on; everything else is removed. Optional 4800 baud and eager key presses. |
 
 Both send the same codes and accept the same LED commands, so the same adapter firmware works with either.
 
@@ -32,10 +32,11 @@ works in a real terminal.
 | `965313-0-rawmode.asm` | Disassembly of the patched image, reassembles to the .bin exactly |
 | `tdv2200-raw.asm`, `tdv2200-raw.bin` | Raw-only firmware source and image |
 | `build_raw.py`, `test_raw.py` | Build and emulator tests for the raw-only firmware |
+| `test_raw_modes.py` | Tests for its 4800 baud and eager-press modes, with contact bounce, and latency measurements |
 | `*_x4_AT28C64.bin`, `*_x16_AT28C256.bin` | Images repeated to fill an 8 KB / 32 KB EEPROM (`make_large_images.py`) |
 | `c/tdv2200-raw.c`, `c/tdv2200-raw-c.bin` | C version of the raw-only firmware and its image (SDCC mcs48 port, see `c/README.md`) |
 | `build_all.sh` | Rebuilds everything and runs all tests |
-| `timing_check.py` | Measures tick timing (main-loop overruns, interrupt length, TX bit timing) for the original and both new images |
+| `timing_check.py` | Measures tick timing (main-loop overruns, interrupt length, TX bit timing) for the original and both new images, at both speeds |
 
 Rebuild everything and run all tests: `./build_all.sh` (Python 3, no extra packages).
 
@@ -104,8 +105,8 @@ the original EPROM.
 
 ## Raw-only firmware (`tdv2200-raw.bin`)
 
-Written from scratch except the timer interrupt (serial TX/RX), which is
-copied from the original ROM. Removed: character tables, Shift/Ctrl/Caps
+Written from scratch; the timer interrupt (serial TX/RX) is based on the
+original ROM's. Removed: character tables, Shift/Ctrl/Caps
 translation, auto-repeat, LED blinking, keyboard lock, ROM/RAM tests, table
 dump and the card reader (expansion) port.
 
@@ -114,14 +115,31 @@ Differences from the patched ROM in raw mode:
 * Raw mode is on from power-up. At power-up and after reset (`20`) the
   keyboard sends the modifier report `00 xx`, so the host can tell it's ready.
 * The modifier column is debounced like the keys (two equal reads ~7 ms apart).
+  Keys are debounced one by one, so a chattering key doesn't hold up another
+  key in its column.
 * `31` re-sends the modifier report. `36` and other old commands are ignored.
+* Optional, off after power-up and reset: `3A`/`3B` send at 4800/2400 baud,
+  `38`/`39` eager key presses on/off. Together they cut the average delay from
+  key down to the end of the byte from 15.2 ms to 5.8 ms. Details and
+  measurements in [`docs/protocol.md`](../docs/protocol.md).
+* TX bit edges are within one CPU cycle of the ideal timing (the original
+  ROM's are up to 20 cycles, 12.5 % of a bit, off).
 
 Commands: `01`-`08` LED on, `09`-`10` LED off, `20` reset, `21`/`22` click
 on/off, `24` beep, `25` LEDs 1-8 off, `31` re-send modifiers, `32`/`33` Caps
-LED on/off, `34`/`35` Lock LED on/off.
+LED on/off, `34`/`35` Lock LED on/off, `38`/`39` eager presses on/off,
+`3A`/`3B` 4800/2400 baud.
 
 Emulator tests (`test_raw.py`), all passing: start-up report; press and
 release for all 123 keys; no auto-repeat; modifiers; 3 ms glitches filtered;
 8 keys in one column; 40 keys at once; every command; old commands silent;
 reset; stack within 2 levels; a 500-event random session decodes to the real
 key state and matches the patched ROM's raw mode.
+
+`test_raw_modes.py`, all passing: switching to 4800 baud and back, also in
+the middle of a 40-key burst (no byte lost or cut); every key at 4800;
+eager presses (a 3 ms spike becomes a short press, as expected; the modifier
+column stays debounced); a key isn't held up by a chattering key in its
+column; 150 presses with up to 5 ms of contact bounce give exactly one press
+and one release each, in every mode; reset turns both options off; a random
+session at 4800 baud with eager presses decodes to the real key state.

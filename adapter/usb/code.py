@@ -10,11 +10,17 @@
 #   lib/adafruit_hid/ from the Adafruit CircuitPython library bundle
 #
 # Wiring as in adapter/build-sheet.html:
-#   GP1 (UART0 RX) <- MAX3490 RO   keyboard -> host, 2400 baud
+#   GP1 (UART0 RX) <- MAX3490 RO   keyboard -> host, 2400 or 4800 baud
 #   GP4 (UART1 TX) -> MAX3490 DI   host -> keyboard, 600 baud
 #
+# With a raw-only ROM that has the speed and debounce commands (Nov 2026 or
+# later), FAST and EAGER below cut the key press delay from about 15 ms to
+# about 6 ms. Older ROMs don't answer the check for them and keep working
+# at 2400 baud.
+#
 # The serial console shows what happens when DEBUG is True. Typing hex bytes
-# and Enter there sends them to the keyboard, as in the sniffer (e.g. 24 = beep).
+# and Enter there sends them to the keyboard, as in the sniffer (e.g. 24 = beep);
+# "2400" or "4800" sets the speed the adapter receives at.
 
 import sys
 import time
@@ -33,6 +39,13 @@ CMD_RAW_MODE = 0x31      # raw mode on (patched ROM) / re-report modifiers (raw-
 CMD_CAPS_LED_ON = 0x32
 CMD_CAPS_LED_OFF = 0x33
 RESYNC_EVERY = 0.5       # seconds between 31h requests while out of sync
+
+FAST = True              # keyboard sends at 4800 baud, if its ROM can
+EAGER = True             # key presses reported on the first scan, if its ROM can
+CMD_RESET = 0x20         # also: back to 2400 baud, eager presses off
+CMD_EAGER_ON = 0x38
+CMD_4800 = 0x3A
+CMD_2400 = 0x3B          # only ROMs with the speed commands answer this ("00 xx")
 
 kbd_in = busio.UART(tx=None, rx=board.GP1, baudrate=2400, timeout=0,
                     receiver_buffer_size=256)
@@ -65,6 +78,10 @@ def apply(events):
 
 
 def console_command(line):
+    if line.strip() in ("2400", "4800"):
+        kbd_in.baudrate = int(line)
+        print("receiving at", kbd_in.baudrate, "baud (send 3a / 3b to switch the keyboard)")
+        return
     try:
         data = bytes(int(t, 16) for t in line.replace(",", " ").split())
     except ValueError:
@@ -75,8 +92,34 @@ def console_command(line):
         print(">> sent", " ".join("%02x" % b for b in data))
 
 
+def start_keyboard():
+    """Reset the keyboard and switch on what its ROM supports."""
+    kbd_in.baudrate = 2400
+    time.sleep(0.2)                       # keyboard start-up
+    send_to_keyboard(CMD_RESET)
+    time.sleep(0.1)
+    send_to_keyboard(CMD_RAW_MODE)        # patched ROM: raw mode on again
+    time.sleep(0.1)
+    kbd_in.reset_input_buffer()
+    send_to_keyboard(CMD_2400)            # do you have the new commands?
+    time.sleep(0.06)
+    reply = kbd_in.read(kbd_in.in_waiting) or b""
+    if len(reply) != 2 or reply[0] != 0x00:
+        say("keyboard ROM without speed/debounce commands: 2400 baud")
+        return
+    if EAGER:
+        send_to_keyboard(CMD_EAGER_ON)
+    if FAST:
+        send_to_keyboard(CMD_4800)
+        time.sleep(0.06)                  # until it has switched (2 commands at 600 baud)
+        kbd_in.baudrate = 4800
+    time.sleep(0.03)
+    kbd_in.reset_input_buffer()           # the "00 xx" it sent goes; 31h below asks again
+    say("keyboard: %d baud, eager presses %s" % (kbd_in.baudrate, "on" if EAGER else "off"))
+
+
 print("TDV 2200 USB keyboard. Type hex + Enter to send bytes to the keyboard.")
-time.sleep(0.2)          # keyboard start-up
+start_keyboard()
 send_to_keyboard(CMD_RAW_MODE)
 last_resync = time.monotonic()
 caps_led = None

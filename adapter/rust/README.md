@@ -18,6 +18,8 @@ Same job as the CircuitPython sniffer (`../code.py`), written with
   (press / release / special column);
 * sends hex bytes typed on the serial port to the keyboard on GP4 (UART1,
   600 baud), e.g. `20` (reset), `24` (beep), `32` / `33` (Caps LED);
+* `baud 2400` / `baud 4800` sets the speed it receives at; send `3a` first
+  to switch a keyboard with the new ROM to 4800 (`3b` back);
 * `boot` restarts the Pico into the UF2 bootloader, so you don't need to
   unplug it and hold BOOTSEL for the next version;
 * the Pico's LED toggles for each burst received.
